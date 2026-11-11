@@ -140,7 +140,7 @@ That is the only correctness obligation for user isolation. There is no view-hie
 
 There is no server-side account and no password. Signing in means typing a username, and **the normalized username is the user id**. This keeps the demo free of auth plumbing while still exercising everything that matters about per-user environments: two people using the app on one device see entirely separate saved locations, settings, and caches, and switching between them tears down and rebuilds the manager layer.
 
-- `SessionManager` owns the current user. The signed-in user's id and the last five usernames live in `PersistentProperty`s on the transient environment's store (`AppEnvironment.transient.propertyFileStore`, the environment with no `userId`), because they must be readable before any user's environment exists. That store is the only one that outlives a session.
+- `SessionManager` owns the current user. The signed-in user's id and the last five usernames live in `PersistentProperty`s on the transient environment's store (`AppEnvironment.transient.propertyFileStore`, the environment with no `userId`), because they must be readable before any user's environment exists. That store is the only one that outlives a session. The two properties themselves live in a process-wide `SessionStore`, not on the manager: every session builds its own `SessionManagerImpl`, and two `PersistentProperty` instances for one key would each keep their own in-memory value, so a write through one would never reach observers of the other.
 - Normalization (trimming, lowercasing, an allowed character set, a length limit) lives in one value type, `Username`, in the `SessionManager` API module, so the screen's validation and the silo directory name can never disagree.
 - Logging out returns to the sign-in screen without deleting anything; signing back in as the same username restores that user's data.
 
@@ -213,7 +213,7 @@ The managers, each chosen to show one pattern (features are in [PRODUCT.md](../P
 | `SlateManager` | Vending Slate stores under the user silo | Per-user store routing |
 | `SessionManager` | The signed-in username and the last five usernames, on the transient environment | Persistent properties that outlive a session; the container rebuild on sign-in and log out |
 | `DeviceLocationManager` | CoreLocation permission and the device's location, as `Property` values | Wrapping a system callback API as reactive state |
-| `PlacesManager` | The `Place` Slate table, including the one `isCurrentLocation` row, and place search | A flag row the manager overwrites as `DeviceLocationManager` reports new locations; debounced search as a `SerialTask` with results in a `MutableProperty` |
+| `PlacesManager` | The `StoredPlace` Slate table, including the one `isCurrentLocation` row, and place search | A flag row the manager overwrites as `DeviceLocationManager` reports moves of more than a kilometer, and deletes while permission isn't granted; a `SlateStream` republished as `places`; search as a plain typed-throws call that the screen model debounces |
 | `ForecastManager` | Fetching and caching forecast and air-quality rows per place | Slate as a cache; observing `PlacesManager.places` to fetch new places and delete removed ones; freshness rules |
 | `PreferencesManager` | One `PersistentProperty` per unit and display setting | Single values with `PersistentProperty`; display formatting derived with `Property(tracking:)` |
 
@@ -333,15 +333,16 @@ The controller structure, from the window down:
 
 ```
 UIWindow
-└── SignInScreen                      root, always; never replaced
+└── RootViewController                root, always; never replaced
+    ├── SignInScreen                  child; rebuilt on each log out
     └── (presented, full screen) UINavigationController     the weather experience
         ├── PlacesListScreen          base of the stack
         └── PlacePagerScreen          pushed above it, navigation bar hidden
             └── PlaceForecastScreen   one per page
 ```
 
-- **The sign-in screen is always the window's root.** It is built in the transient environment and never rebuilt.
-- **`SessionCoordinator`** owns the user-session lifecycle. On sign-in it resets the container, registers the new user's `AppEnvironment`, builds the weather experience from its Builder, and presents it full screen. On a cold launch with a signed-in user it does the same thing immediately, presenting without animation right after the window becomes visible, so the user never sees sign-in. On log out it dismisses the experience, then resets the container to the transient environment. It also signals the `SceneDelegator` when managers may be activated.
+- **The window's root is `RootViewController`**, a plain UIKit container that holds the sign-in screen as a child. It is never replaced. The sign-in screen inside it is rebuilt from its Builder every time the container returns to the transient environment, because its model captured the previous transient container's managers.
+- **`SessionCoordinator`** owns the user-session lifecycle. On sign-in it resets the container, registers the new user's `AppEnvironment`, builds the weather experience from its Builder, and presents it full screen. On a cold launch with a signed-in user it does the same thing immediately, presenting without animation right after the window becomes visible, so the user never sees sign-in. On log out it dismisses the experience, then resets the container to the transient environment and installs a fresh sign-in screen. It also signals the `SceneDelegator` when managers may be activated.
 - **Inside the weather experience**, the pager is pushed above the list without animation when there is a place to show. The pager's list button pops to the list, and tapping a card pushes the pager at that place. Sheets (Units) and menus are presented from the list screen.
 - **Coordinators** live in `Modules/Coordinators/` and own multi-screen flows. A flow with gated steps uses SwiftUIEx's `RequirementCoordinator`, a list of "is this requirement satisfied, else show this screen" nodes; sign-in is simple enough that `SessionCoordinator` doesn't need one.
 - SwiftUI navigation primitives (`.sheet`, a local `NavigationStack`) are allowed only inside a single screen for sub-flows that never leave it.
@@ -358,18 +359,19 @@ Three tiers, chosen by shape. The weather domain was picked partly because it ha
 |---|---|---|---|
 | A single value or a small struct that is read and saved whole | `PersistentProperty<T>` on the right storage engine: `appEnvironment.propertyFileStore` (per user), `propertyKeychainStore` (secrets), `AppEnvironment.transient.propertyFileStore` (outlives sessions) | The manager, vended as `Property(mirroring:)` | One property per unit and display setting; the signed-in user id and last five usernames (transient) |
 | Tabular data | Slate, opened through `SlateManager` under the user silo | The manager; views never see the store | Places (saved and current location), cached current, 15-minute, hourly, daily, and air-quality rows, log entries |
-| In-memory only | `MutableProperty<T>` in the manager | The manager | Place search results, location permission state, in-flight load state |
+| In-memory only | `MutableProperty<T>` in the manager | The manager | Location permission and position, in-flight load state |
+| Screen-local | Values on the screen's ViewModel | The screen model | Search results while searching, edit mode |
 | View-local, no observation beyond the view | `@AppStorage` or `@State` | The view | A collapsed section |
 
 A Slate model is a `@SlateEntity` struct with `#Unique` and `#Index` declarations in `Foundation/Models/<Name>Models/`. `make models` runs `bin/scripts/gen_manager_model.sh <Name>`, which writes the mutable, bridge, and schema files into `<Name>ManagerImpl/Generated/`. Logging has its own script, and opens its store directly under the transient silo, because `SlateManager` depends on it. A manager gets its store with `slateManager.provide(for: <Name>SlateSchema.self)` in `init`. The default `.cacheStore` wipes and recreates a store whose schema no longer fits.
 
 That wipe is fine for a pure cache, such as forecasts, which Open-Meteo can always resupply. Saved locations are different: they are user-created and exist nowhere else, so a schema change loses them. Every store still uses `.cacheStore` and there are no migrations. That loss is accepted as a demo simplification; a shipping app would open user-created data with `.strict` and write migrations.
 
-Whatever the tier, the invariant is the same: **the manager owns the store, opens it from `AppEnvironment` in `init`, and republishes into its `MutableProperty`s after every write.** Cross-manager references are by id, never by relationship.
+Whatever the tier, the invariant is the same: **the manager owns the store, opens it from `AppEnvironment` in `init`, and republishes into its `MutableProperty`s after every write.** The simplest way to keep that promise is to observe a `SlateStream` of the rows, which Slate re-emits after each save, as `PlacesManager` does. Cross-manager references are by id, never by relationship.
 
 ## Design system
 
-`Modules/Foundation/DesignSystem/` is token-driven and every screen composes from it. Three layers: an asset-catalog palette with light and dark variants, purpose-named semantic tokens in Swift (`DesignTokens.primaryAction`, `.screenBackground`, `TextStyle.body`, `CGFloat.m`, `Radius.control`, `ControlHeight.primary`, `RowHeight.standard`), and components built from tokens (`ActionButton`, `FormRow`, `AccessoryListItem`, and others). Rules a reviewer enforces: no hex colors, no `.font(...)` chains, no magic spacing numbers, no raw corner radii, no hand-rolled buttons where `ActionButton` fits, and palette entries never referenced from screen code. A missing token or component is added to `DesignSystem/`, not inlined. The visual language is flat (see PRODUCT.md, "Visual design"): typography, SF Symbols and color carry the design; system Liquid Glass appears only where UIKit and SwiftUI put it (toolbars, menus, sheets, search fields); and the tokens include a per-condition color treatment, not imagery.
+`Modules/Foundation/DesignSystem/` is token-driven and every screen composes from it. Three layers: an asset-catalog palette with light and dark variants, purpose-named semantic tokens in Swift (`DesignTokens.primaryAction`, `.screenBackground`, `TextStyle.body`, `CGFloat.m`, `Radius.control`, `ControlHeight.primary`, `RowHeight.standard`), and components built from tokens (`ActionButton`, `FormRow`, `AccessoryListItem`, and others). Text gets its font and color together from `.textStyle(_:color:)`; a `.foregroundStyle` after it has no effect, because the innermost foreground style wins. Rules a reviewer enforces: no hex colors, no `.font(...)` chains, no magic spacing numbers, no raw corner radii, no hand-rolled buttons where `ActionButton` fits, and palette entries never referenced from screen code. A missing token or component is added to `DesignSystem/`, not inlined. The visual language is flat (see PRODUCT.md, "Visual design"): typography, SF Symbols and color carry the design; system Liquid Glass appears only where UIKit and SwiftUI put it (toolbars, menus, sheets, search fields); and the tokens include a per-condition color treatment, not imagery.
 
 ## Logging and errors
 

@@ -1,7 +1,8 @@
-- AppEnvironment
 - Foundation
 - Inject
 - Injection
 - Logging
-- RootTabUI
+- RootUI
+- SessionCoordinator
+- SwiftAsyncEx
 - UIKit

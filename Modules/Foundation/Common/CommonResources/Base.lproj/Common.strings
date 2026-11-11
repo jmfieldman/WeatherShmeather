@@ -1,0 +1,5 @@
+"network_error" = "Couldn't Load Weather";
+"network_error_offline" = "Check your connection and try again.";
+"network_error_server" = "The weather service had a problem. Try again in a moment.";
+"network_error_unexpected" = "Something went wrong. Try again in a moment.";
+"ok" = "OK";

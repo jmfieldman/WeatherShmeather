@@ -1,0 +1,13 @@
+"places_title" = "Weather";
+"places_more_menu" = "More";
+"places_menu_edit_list" = "Edit List";
+"places_menu_log_out" = "Log Out";
+"places_done_editing" = "Done";
+"places_my_location" = "My Location";
+"places_search_placeholder" = "Search for a city";
+"places_search_close" = "Close Search";
+"places_search_clear" = "Clear";
+"places_search_no_results" = "No places match “%@”.";
+"places_search_saved" = "In your list";
+"places_empty_title" = "No Places Yet";
+"places_empty_body" = "Search for a city below to add it to your list.";

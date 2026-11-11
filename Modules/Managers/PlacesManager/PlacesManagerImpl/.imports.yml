@@ -1,0 +1,15 @@
+- AppEnvironment
+- CocoaEx
+- CoreData
+- DeviceLocationManager
+- Foundation
+- Inject
+- Logging
+- NetworkManager
+- NetworkModels
+- PlacesManager
+- PlacesModels
+- Slate
+- SlateManager
+- SlateSchema
+- SwiftAsyncEx

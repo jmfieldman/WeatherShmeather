@@ -96,6 +96,7 @@ resources:
 # afterwards if a model gained or lost a property.
 models:
 	@bin/scripts/gen_logging_model.sh
+	@bin/scripts/gen_manager_model.sh Places
 	@$(MAKE) format
 
 # Run the module test targets on the simulator. `swift test` can't build modules

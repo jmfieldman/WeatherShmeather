@@ -12,11 +12,40 @@ let package = Package(
     products: [
         .library(name: "AppEnvironment", targets: ["AppEnvironment"]),
         .library(name: "AppEnvironmentTestHelpers", targets: ["AppEnvironmentTestHelpers"]),
+        .library(name: "Common", targets: ["Common"]),
+        .library(name: "CommonResources", targets: ["CommonResources"]),
+        .library(name: "DesignSystem", targets: ["DesignSystem"]),
+        .library(name: "DeviceLocationManagerImpl", targets: ["DeviceLocationManagerImpl"]),
+        .library(name: "DeviceLocationManager", targets: ["DeviceLocationManager"]),
+        .library(name: "DeviceLocationManagerTestHelpers", targets: ["DeviceLocationManagerTestHelpers"]),
         .library(name: "Injection", targets: ["Injection"]),
         .library(name: "Logging", targets: ["Logging"]),
-        .library(name: "RootTabUIImpl", targets: ["RootTabUIImpl"]),
-        .library(name: "RootTabUI", targets: ["RootTabUI"]),
+        .library(name: "NetworkManagerImpl", targets: ["NetworkManagerImpl"]),
+        .library(name: "NetworkManager", targets: ["NetworkManager"]),
+        .library(name: "NetworkManagerTestHelpers", targets: ["NetworkManagerTestHelpers"]),
+        .library(name: "NetworkModels", targets: ["NetworkModels"]),
+        .library(name: "PlacesManagerImpl", targets: ["PlacesManagerImpl"]),
+        .library(name: "PlacesManager", targets: ["PlacesManager"]),
+        .library(name: "PlacesManagerResources", targets: ["PlacesManagerResources"]),
+        .library(name: "PlacesManagerTestHelpers", targets: ["PlacesManagerTestHelpers"]),
+        .library(name: "PlacesModels", targets: ["PlacesModels"]),
+        .library(name: "PlacesUIImpl", targets: ["PlacesUIImpl"]),
+        .library(name: "PlacesUI", targets: ["PlacesUI"]),
+        .library(name: "PlacesUIResources", targets: ["PlacesUIResources"]),
+        .library(name: "RootUIImpl", targets: ["RootUIImpl"]),
+        .library(name: "RootUI", targets: ["RootUI"]),
         .library(name: "SceneDelegation", targets: ["SceneDelegation"]),
+        .library(name: "SessionCoordinatorImpl", targets: ["SessionCoordinatorImpl"]),
+        .library(name: "SessionCoordinator", targets: ["SessionCoordinator"]),
+        .library(name: "SessionManagerImpl", targets: ["SessionManagerImpl"]),
+        .library(name: "SessionManager", targets: ["SessionManager"]),
+        .library(name: "SessionManagerTestHelpers", targets: ["SessionManagerTestHelpers"]),
+        .library(name: "SignInUIImpl", targets: ["SignInUIImpl"]),
+        .library(name: "SignInUI", targets: ["SignInUI"]),
+        .library(name: "SignInUIResources", targets: ["SignInUIResources"]),
+        .library(name: "SlateManagerImpl", targets: ["SlateManagerImpl"]),
+        .library(name: "SlateManager", targets: ["SlateManager"]),
+        .library(name: "SlateManagerTestHelpers", targets: ["SlateManagerTestHelpers"]),
     ],
     dependencies: [
         .package(name: "Inject", path: "../local/Packages/Inject"),
@@ -61,10 +90,93 @@ let package = Package(
             swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .target(
+            name: "Common",
+            dependencies: [
+                "CommonResources",
+            ],
+            path: "Foundation/Common/Common",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "CommonResources",
+            dependencies: [
+            ],
+            path: "Foundation/Common/CommonResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "DesignSystem",
+            dependencies: [
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Foundation/DesignSystem",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "DeviceLocationManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "DeviceLocationManager",
+                "Logging",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/DeviceLocationManager/DeviceLocationManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "DeviceLocationManager",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/DeviceLocationManager/DeviceLocationManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "DeviceLocationManagerTestHelpers",
+            dependencies: [
+                "DeviceLocationManager",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/DeviceLocationManager/DeviceLocationManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
             name: "Injection",
             dependencies: [
-                "RootTabUI",
-                "RootTabUIImpl",
+                "DeviceLocationManager",
+                "DeviceLocationManagerImpl",
+                "NetworkManager",
+                "NetworkManagerImpl",
+                "PlacesManager",
+                "PlacesManagerImpl",
+                "PlacesUI",
+                "PlacesUIImpl",
+                "RootUI",
+                "RootUIImpl",
+                "SessionCoordinator",
+                "SessionCoordinatorImpl",
+                "SessionManager",
+                "SessionManagerImpl",
+                "SignInUI",
+                "SignInUIImpl",
+                "SlateManager",
+                "SlateManagerImpl",
                 .product(name: "Inject", package: "Inject"),
             ],
             path: "Injection/Injection",
@@ -97,22 +209,225 @@ let package = Package(
             swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .target(
-            name: "RootTabUIImpl",
+            name: "NetworkManagerImpl",
             dependencies: [
-                "RootTabUI",
-                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+                "AppEnvironment",
+                "Logging",
+                "NetworkManager",
+                "NetworkModels",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Inject", package: "Inject"),
             ],
-            path: "UI/RootTabUI/RootTabUIImpl",
+            path: "Managers/NetworkManager/NetworkManagerImpl",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .target(
-            name: "RootTabUI",
+            name: "NetworkManager",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                "NetworkModels",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "Managers/NetworkManager/NetworkManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "NetworkManagerTestHelpers",
+            dependencies: [
+                "NetworkManager",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+            ],
+            path: "Managers/NetworkManager/NetworkManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "NetworkManagerTests",
+            dependencies: [
+                "AppEnvironment",
+                "AppEnvironmentTestHelpers",
+                "NetworkManager",
+                "NetworkManagerImpl",
+                "NetworkManagerTestHelpers",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "Managers/NetworkManager/NetworkManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "NetworkModels",
+            dependencies: [
+                "Common",
+                "CommonResources",
+            ],
+            path: "Foundation/Models/NetworkModels",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "DeviceLocationManager",
+                "Logging",
+                "NetworkManager",
+                "NetworkModels",
+                "PlacesManager",
+                "PlacesModels",
+                "SlateManager",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PlacesManager/PlacesManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesManager",
+            dependencies: [
+                "AppEnvironment",
+                "Common",
+                "DeviceLocationManager",
+                "Logging",
+                "NetworkManager",
+                "NetworkModels",
+                "PlacesManagerResources",
+                "PlacesModels",
+                "SlateManager",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PlacesManager/PlacesManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesManagerResources",
+            dependencies: [
+            ],
+            path: "Managers/PlacesManager/PlacesManagerResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesManagerTestHelpers",
+            dependencies: [
+                "DeviceLocationManager",
+                "PlacesManager",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PlacesManager/PlacesManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "PlacesManagerTests",
+            dependencies: [
+                "AppEnvironment",
+                "AppEnvironmentTestHelpers",
+                "DeviceLocationManager",
+                "DeviceLocationManagerTestHelpers",
+                "NetworkManager",
+                "NetworkManagerTestHelpers",
+                "PlacesManager",
+                "PlacesManagerImpl",
+                "PlacesManagerTestHelpers",
+                "SlateManager",
+                "SlateManagerTestHelpers",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "Managers/PlacesManager/PlacesManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesModels",
+            dependencies: [
+                .product(name: "SlateSchema", package: "Slate"),
+            ],
+            path: "Foundation/Models/PlacesModels",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesUIImpl",
+            dependencies: [
+                "Common",
+                "DesignSystem",
+                "Logging",
+                "PlacesManager",
+                "PlacesUI",
+                "PlacesUIResources",
+                "SessionManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+                .product(name: "SwiftUIEx", package: "SwiftUIEx"),
+            ],
+            path: "UI/PlacesUI/PlacesUIImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesUI",
             dependencies: [
                 .product(name: "Inject", package: "Inject"),
             ],
-            path: "UI/RootTabUI/RootTabUI",
+            path: "UI/PlacesUI/PlacesUI",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PlacesUIResources",
+            dependencies: [
+            ],
+            path: "UI/PlacesUI/PlacesUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "RootUIImpl",
+            dependencies: [
+                "RootUI",
+                "SignInUI",
+            ],
+            path: "UI/RootUI/RootUIImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "RootUI",
+            dependencies: [
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/RootUI/RootUI",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],
@@ -120,13 +435,202 @@ let package = Package(
         .target(
             name: "SceneDelegation",
             dependencies: [
-                "AppEnvironment",
                 "Injection",
                 "Logging",
-                "RootTabUI",
+                "RootUI",
+                "SessionCoordinator",
                 .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
             ],
             path: "Foundation/SceneDelegation",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SessionCoordinatorImpl",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                "NetworkManager",
+                "PlacesUI",
+                "RootUI",
+                "SessionCoordinator",
+                "SessionManager",
+                "SlateManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Coordinators/SessionCoordinator/SessionCoordinatorImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SessionCoordinator",
+            dependencies: [
+                "RootUI",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Coordinators/SessionCoordinator/SessionCoordinator",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SessionManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                "SessionManager",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/SessionManager/SessionManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SessionManager",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/SessionManager/SessionManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SessionManagerTestHelpers",
+            dependencies: [
+                "SessionManager",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/SessionManager/SessionManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "SessionManagerTests",
+            dependencies: [
+                "SessionManager",
+                "SessionManagerImpl",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/SessionManager/SessionManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SignInUIImpl",
+            dependencies: [
+                "DesignSystem",
+                "SessionManager",
+                "SignInUI",
+                "SignInUIResources",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+                .product(name: "SwiftUIEx", package: "SwiftUIEx"),
+            ],
+            path: "UI/SignInUI/SignInUIImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SignInUI",
+            dependencies: [
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/SignInUI/SignInUI",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SignInUIResources",
+            dependencies: [
+            ],
+            path: "UI/SignInUI/SignInUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "SignInUITests",
+            dependencies: [
+                "SessionManager",
+                "SessionManagerTestHelpers",
+                "SignInUIImpl",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/SignInUI/SignInUITests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SlateManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                "SlateManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+            ],
+            path: "Managers/SlateManager/SlateManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SlateManager",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+            ],
+            path: "Managers/SlateManager/SlateManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SlateManagerTestHelpers",
+            dependencies: [
+                "SlateManager",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+            ],
+            path: "Managers/SlateManager/SlateManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "SlateManagerTests",
+            dependencies: [
+                "AppEnvironment",
+                "AppEnvironmentTestHelpers",
+                "Logging",
+                "SlateManager",
+                "SlateManagerImpl",
+                "SlateManagerTestHelpers",
+                .product(name: "CocoaEx", package: "CocoaEx"),
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+            ],
+            path: "Managers/SlateManager/SlateManagerTests",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],

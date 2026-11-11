@@ -1,0 +1,12 @@
+- AppEnvironment
+- Foundation
+- Inject
+- Logging
+- NetworkManager
+- PlacesUI
+- RootUI
+- SessionCoordinator
+- SessionManager
+- SlateManager
+- SwiftAsyncEx
+- UIKit

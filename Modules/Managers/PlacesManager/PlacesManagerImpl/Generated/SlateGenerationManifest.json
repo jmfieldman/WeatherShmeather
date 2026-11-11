@@ -1,0 +1,9 @@
+{
+  "files" : [
+    "DatabaseStoredPlace.swift",
+    "PlacesSlateSchema.swift",
+    "StoredPlace+SlateBridge.swift"
+  ],
+  "generatorVersion" : 1,
+  "schemaFingerprint" : "diagnostic:733392f7510b398f"
+}

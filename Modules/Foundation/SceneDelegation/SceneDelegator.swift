@@ -3,12 +3,13 @@
 //  Copyright © 2026 WeatherShmeather.
 //
 
-import AppEnvironment
 import Foundation
 import Inject
 import Injection
 import Logging
-import RootTabUI
+import RootUI
+import SessionCoordinator
+import SwiftAsyncEx
 import UIKit
 
 /// The real app bootstrap. `SceneDelegate` in the app target forwards here,
@@ -16,7 +17,7 @@ import UIKit
 @MainActor
 public final class SceneDelegator {
     var window: UIWindow?
-    var rootTabViewController: (any RootTabViewController)?
+    var sessionCoordinator: (any SessionCoordinator)?
 
     public init() {}
 
@@ -36,19 +37,25 @@ public final class SceneDelegator {
         BuilderManager.registerBuilders()
         Logger.start()
 
-        // Until the session coordinator exists, run in the transient
-        // environment: no user is signed in.
-        InjectionManager.register(AppEnvironment.self) { AppEnvironment.transient }
-
-        let rootTabViewController = RootTabViewControllerBuilder().build()
-        self.rootTabViewController = rootTabViewController
-
+        let rootViewController = RootViewControllerBuilder().build()
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = rootTabViewController
+        window?.rootViewController = rootViewController
         window?.makeKeyAndVisible()
 
-        rootTabViewController.installNewViewControllers()
-        InjectionManager.activateInjections()
+        // The coordinator installs the sign-in screen, and presents the
+        // weather experience at once if a user is still signed in. The window
+        // must already be visible for that presentation.
+        let sessionCoordinator = SessionCoordinatorBuilder(rootViewController: rootViewController).build()
+        self.sessionCoordinator = sessionCoordinator
+
+        Task.observe(bindTo: self) { [sessionCoordinator] in
+            sessionCoordinator.readyForInjectionActivation.value
+        } perform: { isReady in
+            if isReady {
+                Log(.system, .info, "Activating injections")
+                InjectionManager.activateInjections()
+            }
+        }
 
         Log(.system, .info, "scene:willConnectTo:options:")
     }

@@ -1,0 +1,4 @@
+"places_error_title" = "Couldn't Update Places";
+"places_error_search" = "Search isn't available right now. Check your connection and try again.";
+"places_error_storage" = "Your places couldn't be saved. Try again.";
+"places_error_already_saved" = "That place is already in your list.";

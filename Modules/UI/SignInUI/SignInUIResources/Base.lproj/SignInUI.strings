@@ -1,0 +1,6 @@
+"sign_in_title" = "WeatherShmeather";
+"sign_in_subtitle" = "Sign in with any username. There's no password: each username gets its own places and settings on this device.";
+"username_placeholder" = "Username";
+"username_invalid" = "Use up to 32 letters, numbers, - or _, starting with a letter or number.";
+"sign_in_button" = "Sign In";
+"recent_header" = "Recent";

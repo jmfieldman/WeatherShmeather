@@ -1,0 +1,8 @@
+- AppEnvironment
+- CoreLocation
+- DeviceLocationManager
+- Foundation
+- Inject
+- Logging
+- MapKit
+- SwiftAsyncEx
