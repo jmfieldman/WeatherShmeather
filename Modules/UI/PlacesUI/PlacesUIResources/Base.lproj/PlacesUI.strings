@@ -1,6 +1,9 @@
 "places_title" = "Weather";
 "places_more_menu" = "More";
 "places_menu_edit_list" = "Edit List";
+"places_menu_celsius" = "Celsius";
+"places_menu_fahrenheit" = "Fahrenheit";
+"places_menu_units" = "Units";
 "places_menu_log_out" = "Log Out";
 "places_done_editing" = "Done";
 "places_my_location" = "My Location";

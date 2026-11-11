@@ -6,8 +6,10 @@
 - PlacesManager
 - PlacesUI
 - PlacesUIResources
+- PreferencesManager
 - SFSafeSymbols
 - SessionManager
+- SettingsUI
 - SwiftAsyncEx
 - SwiftUI
 - SwiftUIEx

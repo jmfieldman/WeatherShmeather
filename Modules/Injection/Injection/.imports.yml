@@ -7,12 +7,16 @@
 - PlacesManagerImpl
 - PlacesUI
 - PlacesUIImpl
+- PreferencesManager
+- PreferencesManagerImpl
 - RootUI
 - RootUIImpl
 - SessionCoordinator
 - SessionCoordinatorImpl
 - SessionManager
 - SessionManagerImpl
+- SettingsUI
+- SettingsUIImpl
 - SignInUI
 - SignInUIImpl
 - SlateManager

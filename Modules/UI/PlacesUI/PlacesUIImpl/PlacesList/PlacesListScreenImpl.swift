@@ -10,7 +10,9 @@ import Logging
 import PlacesManager
 import PlacesUI
 import PlacesUIResources
+import PreferencesManager
 import SessionManager
+import SettingsUI
 import SFSafeSymbols
 import SwiftAsyncEx
 import SwiftUIEx
@@ -102,8 +104,35 @@ public final class PlacesListScreenImpl: HostingScreen<PlacesListScreenModel, Pl
             model?.logOut()
         }
 
+        // A quick switch for the one setting people change most. It writes
+        // the same preference as the Units sheet.
+        let temperature = model.resolvedTemperatureUnit
+        let celsius = UIAction(
+            title: String.PlacesUI.placesMenuCelsius,
+            image: UIImage(systemSymbol: .degreesignCelsius),
+            state: temperature == .celsius ? .on : .off,
+        ) { [weak model] _ in
+            model?.setTemperatureUnit(.celsius)
+        }
+        let fahrenheit = UIAction(
+            title: String.PlacesUI.placesMenuFahrenheit,
+            image: UIImage(systemSymbol: .degreesignFahrenheit),
+            state: temperature == .fahrenheit ? .on : .off,
+        ) { [weak model] _ in
+            model?.setTemperatureUnit(.fahrenheit)
+        }
+
+        let units = UIAction(
+            title: String.PlacesUI.placesMenuUnits,
+            image: UIImage(systemSymbol: .chartBarXaxis),
+        ) { [weak model] _ in
+            model?.presentUnits()
+        }
+
         return [
             UIMenu(options: .displayInline, children: [edit]),
+            UIMenu(options: .displayInline, children: [celsius, fahrenheit]),
+            UIMenu(options: .displayInline, children: [units]),
             UIMenu(options: .displayInline, children: [logOut]),
         ]
     }
@@ -129,6 +158,7 @@ public final class PlacesListScreenModel: HostingScreenModel {
 
     private let placesManager: PlacesManager = Inject()
     private let sessionManager: SessionManager = Inject()
+    private let preferencesManager: PreferencesManager = Inject()
 
     /// The pending or running search; replaced on every keystroke.
     private var searchBag = TaskBag()
@@ -164,6 +194,20 @@ public final class PlacesListScreenModel: HostingScreenModel {
 
     func logOut() {
         sessionManager.logOut()
+    }
+
+    var resolvedTemperatureUnit: TemperatureUnit {
+        preferencesManager.resolvedTemperatureUnit.value
+    }
+
+    func setTemperatureUnit(_ unit: TemperatureUnitPreference) {
+        preferencesManager.setTemperatureUnit(unit)
+    }
+
+    func presentUnits() {
+        let navigationController = UINavigationController(rootViewController: UnitsScreenBuilder().build())
+        navigationController.modalPresentationStyle = .pageSheet
+        viewController?.present(navigationController, animated: true)
     }
 
     // MARK: Search

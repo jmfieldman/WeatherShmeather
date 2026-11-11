@@ -12,12 +12,16 @@ import PlacesManager
 import PlacesManagerImpl
 import PlacesUI
 import PlacesUIImpl
+import PreferencesManager
+import PreferencesManagerImpl
 import RootUI
 import RootUIImpl
 import SessionCoordinator
 import SessionCoordinatorImpl
 import SessionManager
 import SessionManagerImpl
+import SettingsUI
+import SettingsUIImpl
 import SignInUI
 import SignInUIImpl
 import SlateManager
@@ -29,6 +33,7 @@ public extension InjectionManager {
         InjectionManager.unsafeRegister(DeviceLocationManager.self) { DeviceLocationManagerImpl() }
         InjectionManager.unsafeRegister(NetworkManager.self) { NetworkManagerImpl() }
         InjectionManager.unsafeRegister(PlacesManager.self) { PlacesManagerImpl() }
+        InjectionManager.unsafeRegister(PreferencesManager.self) { PreferencesManagerImpl() }
         InjectionManager.unsafeRegister(SessionManager.self) { SessionManagerImpl() }
         InjectionManager.unsafeRegister(SlateManager.self) { SlateManagerImpl() }
     }
@@ -37,6 +42,7 @@ public extension InjectionManager {
         _ = Inject(DeviceLocationManager.self)
         _ = Inject(NetworkManager.self)
         _ = Inject(PlacesManager.self)
+        _ = Inject(PreferencesManager.self)
         _ = Inject(SessionManager.self)
         _ = Inject(SlateManager.self)
     }
@@ -49,5 +55,6 @@ public extension BuilderManager {
         BuilderManager.unsafeRegister(RootViewControllerBuilder.self) { RootViewControllerImpl(builder: $0 as! RootViewControllerBuilder) }
         BuilderManager.unsafeRegister(SessionCoordinatorBuilder.self) { SessionCoordinatorImpl(builder: $0 as! SessionCoordinatorBuilder) }
         BuilderManager.unsafeRegister(SignInScreenBuilder.self) { SignInScreenImpl(builder: $0 as! SignInScreenBuilder) }
+        BuilderManager.unsafeRegister(UnitsScreenBuilder.self) { UnitsScreenImpl(builder: $0 as! UnitsScreenBuilder) }
     }
 }

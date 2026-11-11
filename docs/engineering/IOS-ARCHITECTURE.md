@@ -197,7 +197,7 @@ public final class ForecastManagerImpl: ForecastManager {
 Rules:
 
 - **Reactive state is `MutableProperty` inside, `Property` outside.** Vend `any PropertyProtocol<T>` get-only members. The class itself is not `@Observable`.
-- **Derived state is `Property(tracking:)`** reading other properties inside the closure. Side effects on change use `Task.observe(of:perform:)`. Never inline `withObservationTracking`.
+- **Derived state is `Property(tracking:)`** reading other properties inside the closure. It recomputes on a later main-actor turn, not inside the write that changed its inputs, so a test waits briefly before reading it. Side effects on change use `Task.observe(of:perform:)`. Never inline `withObservationTracking`.
 - **Long-lived tasks bind to the owner** with `Task.bound(to: self)` or `.bind(to: self)`, so they cancel when the manager is torn down at a user switch. No hand-rolled task arrays.
 - **Repeatable async entry points are `SerialTask`s** (`refresh`, `search`). One in flight at a time; `fire()` coalesces, `run()` awaits. UI components bind to them directly.
 - **Typed throws on every async method.** `async throws(ForecastError)`. Error types live in the API module and conform to `ErrorDialogProviding` so a screen can show them.
@@ -215,7 +215,7 @@ The managers, each chosen to show one pattern (features are in [PRODUCT.md](../P
 | `DeviceLocationManager` | CoreLocation permission and the device's location, as `Property` values | Wrapping a system callback API as reactive state |
 | `PlacesManager` | The `StoredPlace` Slate table, including the one `isCurrentLocation` row, and place search | A flag row the manager overwrites as `DeviceLocationManager` reports moves of more than a kilometer, and deletes while permission isn't granted; a `SlateStream` republished as `places`; search as a plain typed-throws call that the screen model debounces |
 | `ForecastManager` | Fetching and caching forecast and air-quality rows per place | Slate as a cache; observing `PlacesManager.places` to fetch new places and delete removed ones; freshness rules |
-| `PreferencesManager` | One `PersistentProperty` per unit and display setting | Single values with `PersistentProperty`; display formatting derived with `Property(tracking:)` |
+| `PreferencesManager` | One `PersistentProperty` per unit and display setting, defaulting to the device's region | Single values with `PersistentProperty`; `resolvedTemperatureUnit` and `unitSettings` derived with `Property(tracking:)`; a `WeatherFormatter` value built from `unitSettings` turns stored metric values into strings |
 
 The graph is acyclic: `PlacesManager` depends on `DeviceLocationManager`, and `ForecastManager` depends on `PlacesManager`. `PreferencesManager` depends on nothing, and screens combine its settings with the canonical metric values when they format.
 

@@ -32,6 +32,9 @@ let package = Package(
         .library(name: "PlacesUIImpl", targets: ["PlacesUIImpl"]),
         .library(name: "PlacesUI", targets: ["PlacesUI"]),
         .library(name: "PlacesUIResources", targets: ["PlacesUIResources"]),
+        .library(name: "PreferencesManagerImpl", targets: ["PreferencesManagerImpl"]),
+        .library(name: "PreferencesManager", targets: ["PreferencesManager"]),
+        .library(name: "PreferencesManagerTestHelpers", targets: ["PreferencesManagerTestHelpers"]),
         .library(name: "RootUIImpl", targets: ["RootUIImpl"]),
         .library(name: "RootUI", targets: ["RootUI"]),
         .library(name: "SceneDelegation", targets: ["SceneDelegation"]),
@@ -40,6 +43,9 @@ let package = Package(
         .library(name: "SessionManagerImpl", targets: ["SessionManagerImpl"]),
         .library(name: "SessionManager", targets: ["SessionManager"]),
         .library(name: "SessionManagerTestHelpers", targets: ["SessionManagerTestHelpers"]),
+        .library(name: "SettingsUIImpl", targets: ["SettingsUIImpl"]),
+        .library(name: "SettingsUI", targets: ["SettingsUI"]),
+        .library(name: "SettingsUIResources", targets: ["SettingsUIResources"]),
         .library(name: "SignInUIImpl", targets: ["SignInUIImpl"]),
         .library(name: "SignInUI", targets: ["SignInUI"]),
         .library(name: "SignInUIResources", targets: ["SignInUIResources"]),
@@ -167,12 +173,16 @@ let package = Package(
                 "PlacesManagerImpl",
                 "PlacesUI",
                 "PlacesUIImpl",
+                "PreferencesManager",
+                "PreferencesManagerImpl",
                 "RootUI",
                 "RootUIImpl",
                 "SessionCoordinator",
                 "SessionCoordinatorImpl",
                 "SessionManager",
                 "SessionManagerImpl",
+                "SettingsUI",
+                "SettingsUIImpl",
                 "SignInUI",
                 "SignInUIImpl",
                 "SlateManager",
@@ -381,7 +391,9 @@ let package = Package(
                 "PlacesManager",
                 "PlacesUI",
                 "PlacesUIResources",
+                "PreferencesManager",
                 "SessionManager",
+                "SettingsUI",
                 .product(name: "Inject", package: "Inject"),
                 .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
                 .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
@@ -407,6 +419,60 @@ let package = Package(
             dependencies: [
             ],
             path: "UI/PlacesUI/PlacesUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PreferencesManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                "PreferencesManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PreferencesManager/PreferencesManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PreferencesManager",
+            dependencies: [
+                "AppEnvironment",
+                "Logging",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PreferencesManager/PreferencesManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "PreferencesManagerTestHelpers",
+            dependencies: [
+                "PreferencesManager",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PreferencesManager/PreferencesManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "PreferencesManagerTests",
+            dependencies: [
+                "AppEnvironment",
+                "AppEnvironmentTestHelpers",
+                "PreferencesManager",
+                "PreferencesManagerImpl",
+                "PreferencesManagerTestHelpers",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/PreferencesManager/PreferencesManagerTests",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],
@@ -522,6 +588,55 @@ let package = Package(
                 .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
             ],
             path: "Managers/SessionManager/SessionManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SettingsUIImpl",
+            dependencies: [
+                "DesignSystem",
+                "PreferencesManager",
+                "SettingsUI",
+                "SettingsUIResources",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+                .product(name: "SwiftUIEx", package: "SwiftUIEx"),
+            ],
+            path: "UI/SettingsUI/SettingsUIImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SettingsUI",
+            dependencies: [
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/SettingsUI/SettingsUI",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "SettingsUIResources",
+            dependencies: [
+            ],
+            path: "UI/SettingsUI/SettingsUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "SettingsUITests",
+            dependencies: [
+                "PreferencesManager",
+                "PreferencesManagerTestHelpers",
+                "SettingsUIImpl",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/SettingsUI/SettingsUITests",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],

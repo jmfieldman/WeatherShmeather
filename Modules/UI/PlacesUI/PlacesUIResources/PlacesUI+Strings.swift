@@ -19,11 +19,20 @@ public extension String {
         /// "No Places Yet"
         public static let placesEmptyTitle: String = .init(localized: "places_empty_title", defaultValue: "No Places Yet", table: "PlacesUI", bundle: .PlacesUIResources)
 
+        /// "Celsius"
+        public static let placesMenuCelsius: String = .init(localized: "places_menu_celsius", defaultValue: "Celsius", table: "PlacesUI", bundle: .PlacesUIResources)
+
         /// "Edit List"
         public static let placesMenuEditList: String = .init(localized: "places_menu_edit_list", defaultValue: "Edit List", table: "PlacesUI", bundle: .PlacesUIResources)
 
+        /// "Fahrenheit"
+        public static let placesMenuFahrenheit: String = .init(localized: "places_menu_fahrenheit", defaultValue: "Fahrenheit", table: "PlacesUI", bundle: .PlacesUIResources)
+
         /// "Log Out"
         public static let placesMenuLogOut: String = .init(localized: "places_menu_log_out", defaultValue: "Log Out", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Units"
+        public static let placesMenuUnits: String = .init(localized: "places_menu_units", defaultValue: "Units", table: "PlacesUI", bundle: .PlacesUIResources)
 
         /// "More"
         public static let placesMoreMenu: String = .init(localized: "places_more_menu", defaultValue: "More", table: "PlacesUI", bundle: .PlacesUIResources)
