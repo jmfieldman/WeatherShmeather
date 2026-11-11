@@ -36,28 +36,22 @@ public final class UnitsScreenImpl: HostingScreen<UnitsScreenModel, UnitsView>, 
 @MainActor
 public final class UnitsScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?
-    public private(set) lazy var viewModel: UnitsViewModel = .init(
-        settings: preferencesManager.unitSettings.value,
-        temperaturePreference: preferencesManager.temperatureUnit.value,
-        onChange: { [weak self] change in
-            self?.apply(change)
+    public private(set) lazy var viewModel = UnitsViewModel(
+        settings: Property(mirroring: preferencesManager.unitSettings),
+        temperaturePreference: Property(mirroring: preferencesManager.temperatureUnit),
+        systemTemperatureUnit: .constant(RegionDefaults(measurementSystem: Locale.current.measurementSystem).temperature),
+        changeTask: .weak(self) { `self`, change in
+            self.apply(change)
         },
     )
 
     private let preferencesManager: PreferencesManager = Inject()
 
-    public init() {
-        Task.observe(bindTo: self) { [preferencesManager] in
-            (preferencesManager.unitSettings.value, preferencesManager.temperatureUnit.value)
-        } perform: { [weak self] settings, preference in
-            self?.viewModel.settings = settings
-            self?.viewModel.temperaturePreference = preference
-        }
-    }
+    public init() {}
 
     /// Every change goes straight to the manager; the view updates when the
     /// manager's properties do, so there is one source of truth.
-    func apply(_ change: UnitsViewModel.Change) {
+    private func apply(_ change: UnitsViewModel.Change) {
         switch change {
         case let .temperature(preference): preferencesManager.setTemperatureUnit(preference)
         case let .windSpeed(unit): preferencesManager.setWindSpeedUnit(unit)

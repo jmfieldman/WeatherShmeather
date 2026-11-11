@@ -18,13 +18,13 @@ struct UnitsScreenModelTests {
         return UnitsScreenModel()
     }
 
-    @Test func changesGoToTheManager() {
+    @Test func changesGoToTheManager() async throws {
         let preferences = MockPreferencesManager()
         let model = makeModel(preferences: preferences)
 
-        model.viewModel.onChange(.temperature(.fahrenheit))
-        model.viewModel.onChange(.windSpeed(.knots))
-        model.viewModel.onChange(.restoreDefaults)
+        try await model.viewModel.changeTask.run(.temperature(.fahrenheit))
+        try await model.viewModel.changeTask.run(.windSpeed(.knots))
+        try await model.viewModel.changeTask.run(.restoreDefaults)
 
         #expect(preferences.mutableTemperatureUnit.value == .fahrenheit)
         #expect(preferences.mutableWindSpeedUnit.value == .knots)
@@ -36,10 +36,10 @@ struct UnitsScreenModelTests {
         let model = makeModel(preferences: preferences)
 
         preferences.setPressureUnit(.inchesOfMercury)
-        for _ in 0 ..< 50 where model.viewModel.settings.pressure != .inchesOfMercury {
+        for _ in 0 ..< 50 where model.viewModel.settings.value.pressure != .inchesOfMercury {
             try? await Task.sleep(for: .milliseconds(10))
         }
 
-        #expect(model.viewModel.settings.pressure == .inchesOfMercury)
+        #expect(model.viewModel.settings.value.pressure == .inchesOfMercury)
     }
 }

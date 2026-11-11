@@ -26,20 +26,41 @@ struct SignInScreenModelTests {
         #expect(try session.signInCalls == [#require(Username("alice"))])
     }
 
-    @Test func invalidTextCanNotBeSubmitted() {
+    @Test func invalidTextCanNotBeSubmitted() async throws {
         let model = makeModel(session: MockSessionManager())
 
-        model.viewModel.text = "_reserved"
+        try await model.viewModel.textTask.run("_reserved")
+        await settle { model.viewModel.showsValidationHint.value }
 
-        #expect(model.viewModel.submittableUsername == nil)
-        #expect(model.viewModel.showsValidationHint)
+        #expect(model.viewModel.text.value == "_reserved")
+        #expect(model.viewModel.submittableUsername.value == nil)
+        #expect(model.viewModel.showsValidationHint.value)
     }
 
-    @Test func emptyTextShowsNoHint() {
+    @Test func validTextCanBeSubmitted() async throws {
         let model = makeModel(session: MockSessionManager())
 
-        model.viewModel.text = "   "
+        try await model.viewModel.textTask.run("Alice")
+        await settle { model.viewModel.submittableUsername.value != nil }
 
-        #expect(!model.viewModel.showsValidationHint)
+        #expect(model.viewModel.submittableUsername.value?.rawValue == "alice")
+        #expect(!model.viewModel.showsValidationHint.value)
+    }
+
+    @Test func emptyTextShowsNoHint() async throws {
+        let model = makeModel(session: MockSessionManager())
+
+        try await model.viewModel.textTask.run("   ")
+        await settle { model.viewModel.text.value == "   " }
+
+        #expect(!model.viewModel.showsValidationHint.value)
+    }
+
+    /// View model properties mirror the screen model's on a later main-actor
+    /// turn, so wait (briefly) for the one under test to catch up.
+    private func settle(_ condition: @MainActor () -> Bool) async {
+        for _ in 0 ..< 50 where !condition() {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
     }
 }

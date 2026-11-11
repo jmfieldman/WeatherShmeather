@@ -14,31 +14,40 @@ import WeatherDisplay
 
 @Observable @MainActor
 public final class PlaceForecastViewModel {
-    public enum State: Equatable {
+    public enum State: Equatable, Sendable {
         case loading(name: String)
         case failed(name: String, message: String)
         case loaded(PlaceForecastContent)
     }
 
     /// What the Conditions strip shows.
-    public enum Metric: Hashable, CaseIterable {
+    public enum Metric: Hashable, CaseIterable, Sendable {
         case temperature
         case precipitation
         case wind
     }
 
-    public var state: State
-    public var metric: Metric = .temperature
+    public let state: Property<State>
+    public let metric: Property<Metric>
+
+    public let metricTask: SerialTask<Metric, Void>
     public let retryTask: SerialTask<Void, Void>
 
-    public init(state: State = .loading(name: ""), retryTask: SerialTask<Void, Void>) {
+    public init(
+        state: Property<State> = .constant(.loading(name: "")),
+        metric: Property<Metric> = .constant(.temperature),
+        metricTask: SerialTask<Metric, Void> = SerialTask { _ in },
+        retryTask: SerialTask<Void, Void> = SerialTask {},
+    ) {
         self.state = state
+        self.metric = metric
+        self.metricTask = metricTask
         self.retryTask = retryTask
     }
 }
 
 public struct PlaceForecastView: HostedView {
-    @Bindable var viewModel: PlaceForecastViewModel
+    let viewModel: PlaceForecastViewModel
 
     public init(viewModel: PlaceForecastViewModel) {
         self.viewModel = viewModel
@@ -47,7 +56,7 @@ public struct PlaceForecastView: HostedView {
     public var body: some View {
         ZStack {
             background.ignoresSafeArea()
-            switch viewModel.state {
+            switch viewModel.state.value {
             case let .loading(name):
                 placeholder(name: name) { ProgressView().tint(ConditionPalette.foreground) }
 
@@ -63,21 +72,26 @@ public struct PlaceForecastView: HostedView {
                 }
 
             case let .loaded(content):
-                ForecastContentView(content: content, metric: $viewModel.metric)
+                ForecastContentView(content: content, metric: metric)
             }
         }
         .animation(.default, value: backgroundKey)
     }
 
+    /// The strip's picker shows the screen's metric and reports picks as requests.
+    private var metric: Binding<PlaceForecastViewModel.Metric> {
+        Binding(get: { viewModel.metric.value }, set: { viewModel.metricTask.fire($0) })
+    }
+
     private var background: Color {
-        if case let .loaded(content) = viewModel.state {
+        if case let .loaded(content) = viewModel.state.value {
             return content.weatherCode.background(isDay: content.isDay)
         }
         return ConditionPalette.cloudyDay
     }
 
     private var backgroundKey: String {
-        if case let .loaded(content) = viewModel.state {
+        if case let .loaded(content) = viewModel.state.value {
             return "\(content.weatherCode)-\(content.isDay)"
         }
         return "none"
@@ -528,12 +542,11 @@ private struct DetailsSection: View {
 }
 
 #Preview("Loading") {
-    PlaceForecastView(viewModel: PlaceForecastViewModel(state: .loading(name: "Tarzana"), retryTask: SerialTask {}))
+    PlaceForecastView(viewModel: PlaceForecastViewModel(state: .constant(.loading(name: "Tarzana"))))
 }
 
 #Preview("Failed") {
     PlaceForecastView(viewModel: PlaceForecastViewModel(
-        state: .failed(name: "Tarzana", message: "Check your connection and try again."),
-        retryTask: SerialTask {},
+        state: .constant(.failed(name: "Tarzana", message: "Check your connection and try again.")),
     ))
 }

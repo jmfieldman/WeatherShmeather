@@ -11,32 +11,39 @@ import SwiftAsyncEx
 import SwiftUI
 import SwiftUIEx
 
+/// What the sign-in view reads, and what it can ask for.
 @Observable @MainActor
 public final class SignInViewModel {
-    public let signInTask: SerialTask<Username, Void>
-    public var text: String
-    public var recentUsernames: [Username]
-
+    public let text: Property<String>
+    public let recentUsernames: Property<[Username]>
     /// The username to sign in as, or `nil` while the text isn't valid,
     /// which keeps the button disabled.
-    public var submittableUsername: Username? {
-        Username(text)
-    }
-
+    public let submittableUsername: Property<Username?>
     /// Only complain once there's something to complain about.
-    public var showsValidationHint: Bool {
-        !Username.normalize(text).isEmpty && submittableUsername == nil
-    }
+    public let showsValidationHint: Property<Bool>
 
-    public init(signInTask: SerialTask<Username, Void>, text: String = "", recentUsernames: [Username] = []) {
-        self.signInTask = signInTask
+    public let textTask: SerialTask<String, Void>
+    public let signInTask: SerialTask<Username, Void>
+
+    public init(
+        text: Property<String> = .constant(""),
+        recentUsernames: Property<[Username]> = .constant([]),
+        submittableUsername: Property<Username?> = .constant(nil),
+        showsValidationHint: Property<Bool> = .constant(false),
+        textTask: SerialTask<String, Void> = SerialTask { _ in },
+        signInTask: SerialTask<Username, Void> = SerialTask { _ in },
+    ) {
         self.text = text
         self.recentUsernames = recentUsernames
+        self.submittableUsername = submittableUsername
+        self.showsValidationHint = showsValidationHint
+        self.textTask = textTask
+        self.signInTask = signInTask
     }
 }
 
 public struct SignInView: HostedView {
-    @Bindable var viewModel: SignInViewModel
+    let viewModel: SignInViewModel
     @FocusState private var isFieldFocused: Bool
 
     public init(viewModel: SignInViewModel) {
@@ -48,7 +55,7 @@ public struct SignInView: HostedView {
             VStack(spacing: .xl) {
                 header
                 form
-                if !viewModel.recentUsernames.isEmpty {
+                if !viewModel.recentUsernames.value.isEmpty {
                     recents
                 }
             }
@@ -78,7 +85,7 @@ public struct SignInView: HostedView {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: .s) {
-            TextField(String.SignInUI.usernamePlaceholder, text: $viewModel.text)
+            TextField(String.SignInUI.usernamePlaceholder, text: text)
                 .textStyle(.body)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -92,13 +99,13 @@ public struct SignInView: HostedView {
 
             Text(String.SignInUI.usernameInvalid)
                 .textStyle(.caption, color: DesignTokens.error)
-                .opacity(viewModel.showsValidationHint ? 1 : 0)
-                .accessibilityHidden(!viewModel.showsValidationHint)
+                .opacity(viewModel.showsValidationHint.value ? 1 : 0)
+                .accessibilityHidden(!viewModel.showsValidationHint.value)
 
             ActionButton(
                 String.SignInUI.signInButton,
                 task: viewModel.signInTask,
-                input: viewModel.submittableUsername,
+                input: viewModel.submittableUsername.value,
             )
         }
     }
@@ -109,7 +116,7 @@ public struct SignInView: HostedView {
                 .textStyle(.caption)
                 .padding(.horizontal, .xs)
             VStack(spacing: 0) {
-                ForEach(viewModel.recentUsernames, id: \.self) { username in
+                ForEach(viewModel.recentUsernames.value, id: \.self) { username in
                     Button {
                         viewModel.signInTask.fire(username)
                     } label: {
@@ -128,7 +135,7 @@ public struct SignInView: HostedView {
                     }
                     .buttonStyle(.plain)
                     .disabled(viewModel.signInTask.isExecuting)
-                    if username != viewModel.recentUsernames.last {
+                    if username != viewModel.recentUsernames.value.last {
                         Divider().padding(.leading, .m)
                     }
                 }
@@ -137,8 +144,13 @@ public struct SignInView: HostedView {
         }
     }
 
+    /// The field shows the screen's text and reports edits as requests.
+    private var text: Binding<String> {
+        Binding(get: { viewModel.text.value }, set: { viewModel.textTask.fire($0) })
+    }
+
     private func submit() {
-        if let username = viewModel.submittableUsername {
+        if let username = viewModel.submittableUsername.value {
             viewModel.signInTask.fire(username)
         }
     }
@@ -157,8 +169,7 @@ public struct SignInView: HostedView {
 private extension SignInViewModel {
     static var preview: SignInViewModel {
         SignInViewModel(
-            signInTask: SerialTask { _ in },
-            recentUsernames: ["alice", "bob"].compactMap(Username.init),
+            recentUsernames: .constant(["alice", "bob"].compactMap(Username.init)),
         )
     }
 }

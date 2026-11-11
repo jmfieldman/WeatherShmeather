@@ -38,14 +38,14 @@ public final class PlacesListScreenImpl: HostingScreen<PlacesListScreenModel, Pl
 
         let viewModel = controllerModel.viewModel
         Task.observe(bindTo: self) {
-            viewModel.isEditing
+            viewModel.isEditing.value
         } perform: { [weak self] isEditing in
             self?.installBarButton(isEditing: isEditing)
         }
 
         // Search takes the whole screen, as its own mode.
         Task.observe(bindTo: self) {
-            viewModel.isSearching
+            viewModel.isSearching.value
         } perform: { [weak self] isSearching in
             self?.navigationController?.setNavigationBarHidden(isSearching, animated: true)
         }
@@ -61,7 +61,7 @@ public final class PlacesListScreenImpl: HostingScreen<PlacesListScreenModel, Pl
             let done = UIBarButtonItem(
                 image: UIImage(systemSymbol: .checkmark),
                 primaryAction: UIAction { [weak controllerModel] _ in
-                    controllerModel?.viewModel.isEditing = false
+                    controllerModel?.setEditing(false)
                 },
             )
             done.style = .prominent
@@ -94,9 +94,9 @@ public final class PlacesListScreenImpl: HostingScreen<PlacesListScreenModel, Pl
         let edit = UIAction(
             title: String.PlacesUI.placesMenuEditList,
             image: UIImage(systemSymbol: .pencil),
-            attributes: model.viewModel.canEdit ? [] : .disabled,
+            attributes: model.canEdit ? [] : .disabled,
         ) { [weak model] _ in
-            model?.viewModel.isEditing = true
+            model?.setEditing(true)
         }
 
         let logOut = UIAction(
@@ -144,26 +144,53 @@ public final class PlacesListScreenImpl: HostingScreen<PlacesListScreenModel, Pl
 @MainActor
 public final class PlacesListScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?
-    public private(set) lazy var viewModel: PlacesListViewModel = .init(
+    public private(set) lazy var viewModel = PlacesListViewModel(
+        cards: Property(mirroring: cards),
+        showsEmptyState: Property(tracking: { [hasLoaded, cards, isSearching] in
+            hasLoaded.value && cards.value.isEmpty && !isSearching.value
+        }),
+        isEditing: Property(mirroring: isEditing),
+        isSearching: Property(mirroring: isSearching),
+        searchText: Property(mirroring: searchText),
+        searchState: Property(mirroring: searchState),
+        scrollTarget: Property(mirroring: scrollTarget),
+        selectCardTask: .weak(self) { `self`, placeId in
+            self.openPager(at: placeId, animated: true)
+        },
+        refreshTask: .weak(self) { `self` in
+            await self.forecastManager.refreshAll()
+        },
+        deleteTask: .weak(self) { `self`, offsets in
+            self.deleteCards(atOffsets: offsets)
+        },
+        moveTask: .weak(self) { `self`, move in
+            self.moveCards(move)
+        },
+        beginSearchTask: .weak(self) { `self` in
+            self.beginSearch()
+        },
+        endSearchTask: .weak(self) { `self` in
+            self.endSearch()
+        },
+        searchTextTask: .weak(self) { `self`, text in
+            self.searchTextChanged(text)
+        },
         addTask: .weak(self) { `self`, result in
             await self.add(result)
         },
-        onDelete: { [weak self] placeId in
-            self?.delete(placeId: placeId)
-        },
-        onMove: { [weak self] source, destination in
-            self?.move(fromOffsets: source, toOffset: destination)
-        },
-        onSearchTextChange: { [weak self] text in
-            self?.searchTextChanged(text)
-        },
-        onSelectCard: { [weak self] placeId in
-            self?.openPager(at: placeId, animated: true)
-        },
-        onRefresh: { [weak self] in
-            await self?.forecastManager.refreshAll()
+        scrolledToTargetTask: .weak(self) { `self` in
+            self.scrollTarget.value = nil
         },
     )
+
+    // The screen's state. The view model mirrors these read-only.
+    private let cards = MutableProperty<[PlaceCard]>([])
+    private let hasLoaded = MutableProperty(false)
+    private let isEditing = MutableProperty(false)
+    private let isSearching = MutableProperty(false)
+    private let searchText = MutableProperty("")
+    private let searchState = MutableProperty<SearchState>(.idle)
+    private let scrollTarget = MutableProperty<String?>(nil)
 
     private let placesManager: PlacesManager = Inject()
     private let sessionManager: SessionManager = Inject()
@@ -188,18 +215,18 @@ public final class PlacesListScreenModel: HostingScreenModel {
             }
 
             let formatter = WeatherFormatter(settings: settings)
-            viewModel.cards = places.map { place in
+            cards.value = places.map { place in
                 PlaceCard(place: place, weather: forecasts[place.id].map { Self.cardWeather($0, formatter: formatter) })
             }
-            if !viewModel.canEdit {
-                viewModel.isEditing = false
+            if !canEdit {
+                isEditing.value = false
             }
         }
 
         Task.observe(bindTo: self) { [placesManager] in
             placesManager.hasLoaded.value
         } perform: { [weak self] hasLoaded in
-            self?.viewModel.hasLoaded = hasLoaded
+            self?.hasLoaded.value = hasLoaded
             self?.openInitialPageIfNeeded()
         }
 
@@ -247,12 +274,23 @@ public final class PlacesListScreenModel: HostingScreenModel {
     }
 
     private func openPager(at placeId: String, animated: Bool) {
-        guard !viewModel.isEditing, !viewModel.isSearching else {
+        guard !isEditing.value, !isSearching.value else {
             return
         }
 
         let pager = PlacePagerScreenBuilder(initialPlaceId: placeId).build()
         viewController?.navigationController?.pushViewController(pager, animated: animated)
+    }
+
+    // MARK: Menu
+
+    /// Whether there is anything Edit List could change.
+    var canEdit: Bool {
+        cards.value.contains { !$0.isCurrentLocation }
+    }
+
+    func setEditing(_ editing: Bool) {
+        isEditing.value = editing && canEdit
     }
 
     func logOut() {
@@ -275,18 +313,36 @@ public final class PlacesListScreenModel: HostingScreenModel {
 
     // MARK: Search
 
+    private func beginSearch() {
+        isEditing.value = false
+        isSearching.value = true
+    }
+
+    private func endSearch() {
+        searchBag.cancelAll()
+        latestResults = []
+        isSearching.value = false
+        searchText.value = ""
+        searchState.value = .idle
+    }
+
     private func searchTextChanged(_ text: String) {
+        guard text != searchText.value else {
+            return
+        }
+
+        searchText.value = text
         searchBag.cancelAll()
         searchBag = TaskBag()
 
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
             latestResults = []
-            viewModel.searchState = .idle
+            searchState.value = .idle
             return
         }
 
-        viewModel.searchState = .loading
+        searchState.value = .loading
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: kSearchDebounce)
             guard !Task.isCancelled else {
@@ -306,7 +362,7 @@ public final class PlacesListScreenModel: HostingScreenModel {
             }
 
             latestResults = results
-            viewModel.searchState = results.isEmpty ? .noResults(query: query) : .loading
+            searchState.value = results.isEmpty ? .noResults(query: query) : .loading
             publishResults()
         } catch {
             guard !Task.isCancelled else {
@@ -314,7 +370,7 @@ public final class PlacesListScreenModel: HostingScreenModel {
             }
 
             latestResults = []
-            viewModel.searchState = .failed(message: error.errorBody)
+            searchState.value = .failed(message: error.errorBody)
         }
     }
 
@@ -324,7 +380,7 @@ public final class PlacesListScreenModel: HostingScreenModel {
         }
 
         let saved = placesManager.savedGeocodingIds.value
-        viewModel.searchState = .results(latestResults.map { SearchRow(result: $0, isSaved: saved.contains($0.id)) })
+        searchState.value = .results(latestResults.map { SearchRow(result: $0, isSaved: saved.contains($0.id)) })
     }
 
     // MARK: Editing
@@ -332,26 +388,46 @@ public final class PlacesListScreenModel: HostingScreenModel {
     private func add(_ result: PlaceSearchResult) async {
         do {
             let place = try await placesManager.add(result)
-            latestResults = []
-            viewModel.endSearch()
-            viewModel.scrollTarget = place.id
+            endSearch()
+            scrollTarget.value = place.id
         } catch {
             viewController?.present(error: error)
         }
     }
 
-    private func delete(placeId: String) {
-        Task { @MainActor [weak self, placesManager] in
-            do throws(PlacesError) {
-                try await placesManager.delete(placeId: placeId)
-            } catch {
-                self?.viewController?.present(error: error)
-            }
-        }
-        .bind(to: self)
+    /// The fixed current-location card leads the list but isn't a saved
+    /// place, so offsets into the cards are shifted past it.
+    private var currentLocationCount: Int {
+        cards.value.prefix { $0.isCurrentLocation }.count
     }
 
-    private func move(fromOffsets source: IndexSet, toOffset destination: Int) {
+    /// Deletes every saved place at the offsets. Each delete runs on its own,
+    /// so this returns as soon as they are started.
+    private func deleteCards(atOffsets offsets: IndexSet) {
+        let placeIds = offsets.compactMap { index in
+            cards.value.indices.contains(index) && !cards.value[index].isCurrentLocation ? cards.value[index].id : nil
+        }
+        for placeId in placeIds {
+            Task { @MainActor [weak self, placesManager] in
+                do throws(PlacesError) {
+                    try await placesManager.delete(placeId: placeId)
+                } catch {
+                    self?.viewController?.present(error: error)
+                }
+            }
+            .bind(to: self)
+        }
+    }
+
+    /// Converts a move in the full card list into a move among saved places.
+    private func moveCards(_ move: CardMove) {
+        let offset = currentLocationCount
+        let source = IndexSet(move.source.compactMap { $0 >= offset ? $0 - offset : nil })
+        guard !source.isEmpty else {
+            return
+        }
+
+        let destination = max(move.destination - offset, 0)
         Task { @MainActor [weak self, placesManager] in
             do throws(PlacesError) {
                 try await placesManager.moveSavedPlaces(fromOffsets: source, toOffset: destination)

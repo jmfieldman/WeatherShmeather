@@ -7,6 +7,7 @@ import DesignSystem
 import PreferencesManager
 import SettingsUIResources
 import SFSafeSymbols
+import SwiftAsyncEx
 import SwiftUI
 import SwiftUIEx
 
@@ -23,22 +24,23 @@ public final class UnitsViewModel {
         case restoreDefaults
     }
 
-    public var settings: UnitSettings
-    public var temperaturePreference: TemperatureUnitPreference
+    public let settings: Property<UnitSettings>
+    public let temperaturePreference: Property<TemperatureUnitPreference>
     /// What "Use System Setting" resolves to on this device.
-    public let systemTemperatureUnit: TemperatureUnit
-    @ObservationIgnored public let onChange: @MainActor (Change) -> Void
+    public let systemTemperatureUnit: Property<TemperatureUnit>
+
+    public let changeTask: SerialTask<Change, Void>
 
     public init(
-        settings: UnitSettings,
-        temperaturePreference: TemperatureUnitPreference,
-        systemTemperatureUnit: TemperatureUnit = RegionDefaults(measurementSystem: Locale.current.measurementSystem).temperature,
-        onChange: @escaping @MainActor (Change) -> Void,
+        settings: Property<UnitSettings>,
+        temperaturePreference: Property<TemperatureUnitPreference> = .constant(.system),
+        systemTemperatureUnit: Property<TemperatureUnit> = .constant(.celsius),
+        changeTask: SerialTask<Change, Void> = SerialTask { _ in },
     ) {
         self.settings = settings
         self.temperaturePreference = temperaturePreference
         self.systemTemperatureUnit = systemTemperatureUnit
-        self.onChange = onChange
+        self.changeTask = changeTask
     }
 }
 
@@ -56,29 +58,29 @@ public struct UnitsView: HostedView {
                 temperatureRow(.fahrenheit, title: String.SettingsUI.unitsFahrenheit)
                 temperatureRow(
                     .system,
-                    title: String.SettingsUI.unitsSystemTemperature(viewModel.systemTemperatureUnit.symbol),
+                    title: String.SettingsUI.unitsSystemTemperature(viewModel.systemTemperatureUnit.value.symbol),
                 )
             }
 
             Section(String.SettingsUI.unitsOtherHeader) {
-                picker(String.SettingsUI.unitsWind, selection: viewModel.settings.windSpeed, change: UnitsViewModel.Change.windSpeed)
-                picker(String.SettingsUI.unitsPrecipitation, selection: viewModel.settings.precipitation, change: UnitsViewModel.Change.precipitation)
-                picker(String.SettingsUI.unitsPressure, selection: viewModel.settings.pressure, change: UnitsViewModel.Change.pressure)
-                picker(String.SettingsUI.unitsDistance, selection: viewModel.settings.distance, change: UnitsViewModel.Change.distance)
+                picker(String.SettingsUI.unitsWind, selection: viewModel.settings.value.windSpeed, change: UnitsViewModel.Change.windSpeed)
+                picker(String.SettingsUI.unitsPrecipitation, selection: viewModel.settings.value.precipitation, change: UnitsViewModel.Change.precipitation)
+                picker(String.SettingsUI.unitsPressure, selection: viewModel.settings.value.pressure, change: UnitsViewModel.Change.pressure)
+                picker(String.SettingsUI.unitsDistance, selection: viewModel.settings.value.distance, change: UnitsViewModel.Change.distance)
             }
 
             Section(String.SettingsUI.unitsDisplayHeader) {
-                picker(String.SettingsUI.unitsTimeFormat, selection: viewModel.settings.timeFormat, change: UnitsViewModel.Change.timeFormat)
+                picker(String.SettingsUI.unitsTimeFormat, selection: viewModel.settings.value.timeFormat, change: UnitsViewModel.Change.timeFormat)
                 picker(
                     String.SettingsUI.unitsAirQualityScale,
-                    selection: viewModel.settings.airQualityScale,
+                    selection: viewModel.settings.value.airQualityScale,
                     change: UnitsViewModel.Change.airQualityScale,
                 )
             }
 
             Section {
                 Button(String.SettingsUI.unitsRestoreDefaults) {
-                    viewModel.onChange(.restoreDefaults)
+                    viewModel.changeTask.fire(.restoreDefaults)
                 }
             } footer: {
                 Text(String.SettingsUI.unitsRestoreFooter)
@@ -88,13 +90,13 @@ public struct UnitsView: HostedView {
 
     private func temperatureRow(_ preference: TemperatureUnitPreference, title: String) -> some View {
         Button {
-            viewModel.onChange(.temperature(preference))
+            viewModel.changeTask.fire(.temperature(preference))
         } label: {
             HStack {
                 Text(title)
                     .textStyle(.body)
                 Spacer()
-                if viewModel.temperaturePreference == preference {
+                if viewModel.temperaturePreference.value == preference {
                     Image(systemSymbol: .checkmark)
                         .foregroundStyle(DesignTokens.accent)
                 }
@@ -102,7 +104,7 @@ public struct UnitsView: HostedView {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(viewModel.temperaturePreference == preference ? .isSelected : [])
+        .accessibilityAddTraits(viewModel.temperaturePreference.value == preference ? .isSelected : [])
     }
 
     /// A menu picker over every case of a unit, bound to the view model's
@@ -112,7 +114,7 @@ public struct UnitsView: HostedView {
         selection: Unit,
         change: @escaping (Unit) -> UnitsViewModel.Change,
     ) -> some View {
-        Picker(title, selection: Binding(get: { selection }, set: { viewModel.onChange(change($0)) })) {
+        Picker(title, selection: Binding(get: { selection }, set: { viewModel.changeTask.fire(change($0)) })) {
             ForEach(Array(Unit.allCases), id: \.self) { unit in
                 Text(unit.displayName).tag(unit)
             }
@@ -194,7 +196,7 @@ extension TemperatureUnit {
 
 #Preview("Light") {
     UnitsView(viewModel: UnitsViewModel(
-        settings: UnitSettings(
+        settings: .constant(UnitSettings(
             temperature: .fahrenheit,
             windSpeed: .milesPerHour,
             precipitation: .inches,
@@ -202,9 +204,7 @@ extension TemperatureUnit {
             distance: .miles,
             timeFormat: .system,
             airQualityScale: .unitedStates,
-        ),
-        temperaturePreference: .system,
-        systemTemperatureUnit: .fahrenheit,
-        onChange: { _ in },
+        )),
+        systemTemperatureUnit: .constant(.fahrenheit),
     ))
 }

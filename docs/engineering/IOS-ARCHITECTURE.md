@@ -147,10 +147,10 @@ There is no server-side account and no password. Signing in means typing a usern
 ## Layers
 
 ```
-HostedView           SwiftUI leaf; pure function of its @Observable ViewModel
-  ▲ reads state, fires closures and SerialTasks
-ViewModel            @Observable @MainActor; plain values, closures, SerialTasks; previewable alone
-  ▲ constructed and driven by
+HostedView           SwiftUI leaf; pure function of its ViewModel
+  ▲ reads Property values, fires SerialTasks
+ViewModel            @Observable @MainActor; only Property and SerialTask lets; previewable alone
+  ▲ constructed by; its Properties mirror
 ScreenModel          @MainActor HostingScreenModel; Inject()s managers; async work; navigation via viewController
   ▲ owned by
 ScreenImpl           HostingScreen subclass (a UIViewController); navigationItem; lifecycle
@@ -197,9 +197,9 @@ public final class ForecastManagerImpl: ForecastManager {
 Rules:
 
 - **Reactive state is `MutableProperty` inside, `Property` outside.** Vend `any PropertyProtocol<T>` get-only members. The class itself is not `@Observable`.
-- **Derived state is `Property(tracking:)`** reading other properties inside the closure. It recomputes on a later main-actor turn, not inside the write that changed its inputs, so a test waits briefly before reading it. Side effects on change use `Task.observe(of:perform:)`. Never inline `withObservationTracking`.
+- **Derived state is `Property(tracking:)`** reading other properties inside the closure. On iOS 26 it recomputes on a later main-actor turn, not inside the write that changed its inputs, so a test waits briefly before reading it. `Property(mirroring:)` is the same mechanism and has the same delay. Side effects on change use `Task.observe(of:perform:)`. Never inline `withObservationTracking`.
 - **Long-lived tasks bind to the owner** with `Task.bound(to: self)` or `.bind(to: self)`, so they cancel when the manager is torn down at a user switch. No hand-rolled task arrays.
-- **Repeatable async entry points are `SerialTask`s** (`refresh`, `search`). One in flight at a time; `fire()` coalesces, `run()` awaits. UI components bind to them directly.
+- **Repeatable async entry points are `SerialTask`s** (`refresh`, `search`). One in flight at a time: a call made while one is running is dropped (`run()` throws `AlreadyExecuting`, `fire()` swallows it), so a `SerialTask` suits "do this once now", not a queue. UI components bind to them directly, and `isExecuting` drives spinners and disabled states.
 - **Typed throws on every async method.** `async throws(ForecastError)`. Error types live in the API module and conform to `ErrorDialogProviding` so a screen can show them.
 - **Transient versus per-user mode is decided in `init`** from `appEnvironment.userId`.
 - **Heavy work goes to a plain `actor` or `Task.detached`** that pushes results into a MainActor `MutableProperty`. Do not make a manager a non-main global actor.
@@ -263,7 +263,7 @@ public struct PlaceForecastScreenBuilder: Builder {
     public init(placeId: Place.ID) { self.placeId = placeId }
 }
 
-// Impl: Modules/UI/WeatherUI/WeatherUIImpl/PlaceForecast/PlaceForecastScreenImpl.swift
+// Impl: Modules/UI/ForecastUI/ForecastUIImpl/PlaceForecast/PlaceForecastScreenImpl.swift
 @MainActor
 public final class PlaceForecastScreenImpl: HostingScreen<PlaceForecastScreenModel, PlaceForecastView>, PlaceForecastScreen {
     public convenience init(builder: PlaceForecastScreenBuilder) {
@@ -274,20 +274,26 @@ public final class PlaceForecastScreenImpl: HostingScreen<PlaceForecastScreenMod
 @MainActor
 public final class PlaceForecastScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?          // must be weak
-    public private(set) lazy var viewModel: PlaceForecastViewModel = .init(
-        refreshTask: .weak(self) { `self`, _ in await self.refresh() },
+    // lazy: the tasks capture self weakly, which needs a fully built self.
+    public private(set) lazy var viewModel = PlaceForecastViewModel(
+        title: Property(mirroring: title),                     // read-only to the view
+        refreshTask: .weak(self) { `self` in await self.refresh() },
     )
+    private let title = MutableProperty("")                    // the screen's state, written only here
     private let forecastManager: ForecastManager = Inject()
     let placeId: Place.ID
     public init(placeId: Place.ID) { self.placeId = placeId }
 }
 
-// Impl: Modules/UI/WeatherUI/WeatherUIImpl/PlaceForecast/PlaceForecastView.swift
+// Impl: Modules/UI/ForecastUI/ForecastUIImpl/PlaceForecast/PlaceForecastView.swift
 @Observable @MainActor
 public final class PlaceForecastViewModel {
-    public var title: String = ""
+    public let title: Property<String>
     public let refreshTask: SerialTask<Void, Void>
-    public init(refreshTask: SerialTask<Void, Void>) { self.refreshTask = refreshTask }
+    public init(title: Property<String> = .constant(""), refreshTask: SerialTask<Void, Void> = SerialTask {}) {
+        self.title = title
+        self.refreshTask = refreshTask
+    }
 }
 
 public struct PlaceForecastView: HostedView {
@@ -300,13 +306,37 @@ public struct PlaceForecastView: HostedView {
 What each piece may do:
 
 - **Builder** (API): input parameters only. `build()` is inherited; registration is generated.
-- **ScreenImpl**: forward the builder to the model, set `navigationItem`, lifecycle hooks. Nothing else.
-- **ScreenModel**: the only place with `Inject()`, `try await`, error translation, and navigation. Constructs the ViewModel with `SerialTask.weak(self)` closures so the model is never retained by its own tasks. Observes manager properties and pushes values into the ViewModel.
-- **ViewModel**: what a `#Preview` needs and nothing more. Values, closures, `SerialTask`s. No `Inject()`, no navigation.
+- **ScreenImpl**: forward the builder to the model, set `navigationItem`, lifecycle hooks, and the UIKit chrome SwiftUI doesn't own: bar buttons and menus. Chrome follows state with `Task.observe` on the ViewModel's properties (the places list swaps its menu for a checkmark while `isEditing` is true), and its actions call screen model methods directly, since they are UIKit code on the model's side of the line, not view requests. No other logic.
+- **ScreenModel**: the only place with `Inject()`, `try await`, error translation, and navigation. It owns the screen's state as private `MutableProperty`s, and hands the ViewModel read-only views of them: `Property(mirroring:)`, `Property(tracking:)` for derived values, or a manager's own property. It builds every task with `SerialTask.weak(self)`, so the model is never retained by its own tasks. A task's side effects happen here, and reach the view only as changes to those properties.
+- **ViewModel**: what a `#Preview` needs and nothing more, and nothing but `let` `Property`s and `SerialTask`s. No plain `var`s, no closures, no `MutableProperty`, no computed state, no methods. Every parameter of its init has a default (`.constant(…)`, an empty `SerialTask`), so a preview passes only what it shows. No `Inject()`, no navigation.
 - **Content builder** (optional): when a screen has real display rules, the screen model hands its inputs to a pure function that returns display-ready values, as `PlaceForecastContent.make(place:forecast:settings:now:)` does for the forecast page. The rules are then tested as plain data, and the view only lays the values out.
-- **View**: pure SwiftUI. Reads the ViewModel, fires its tasks, uses `@State` for purely local input. No `@Query`, no `@Environment` stores, no `NavigationStack` across screen boundaries, no manager access. Always ships with light and dark previews built from a bare ViewModel.
+- **View**: pure SwiftUI. Holds the ViewModel as `let viewModel`, never `@Bindable` or `@State`, and its only init is `init(viewModel:)`: `HostedView` is public, so that init must be public, and Swift's memberwise init never is. Any other stored property (`@FocusState`, `@State` for purely local presentation) has a default value. Reads `.value` off the ViewModel's properties and fires its tasks. A control that needs a `Binding`, such as a text field or picker, gets one built from the two, `Binding(get: { viewModel.text.value }, set: { viewModel.textTask.fire($0) })`, so an edit is a request the screen model decides on. No `@Query`, no `@Environment` stores, no `NavigationStack` across screen boundaries, no manager access. Always ships with light and dark previews built from a bare ViewModel.
 
 Naming: `FooScreen`, `FooScreenBuilder`, `FooScreenImpl`, `FooScreenModel`, `FooViewModel`, `FooView`. One `<Feature>UI` group can hold many screens; each gets its own `<Screen>Screen.swift` in the API target and a subdirectory in the Impl target.
+
+### The screen loop
+
+State flows one way around a loop, and the ViewModel is the seam the loop passes through:
+
+```
+View ──fires──▶ SerialTask ──runs in──▶ ScreenModel ──writes──▶ MutableProperty
+  ▲                                         │ calls managers,           │
+  └─────── reads Property.value ◀── mirror ─┘ navigates, shows errors ◀─┘
+```
+
+The view never changes state itself; it asks, and the screen model answers by changing properties. That gives each piece one job and one test surface: a preview builds a ViewModel from `.constant(…)` values, and a screen model test drives the ViewModel's tasks with `run(…)` and reads its properties, exactly as the view would.
+
+The rules that make the loop hold:
+
+- **Every user intent is a `SerialTask` on the ViewModel**, including ones with no async work: selecting a card, beginning or ending search, typing a character, picking a segment. The task's work runs in the screen model, which decides what changes. Closures and methods on the ViewModel are not allowed, so there is exactly one way for the view to ask for anything.
+- **Edits are requests.** A text field or picker gets `Binding(get: { viewModel.text.value }, set: { viewModel.textTask.fire($0) })`. The screen model may accept, change, or ignore the value, and the field shows whatever the property then holds. Clearing a field is the same task with `""`.
+- **Send a batch as one call.** A task drops calls made while it runs, so a gesture that reports several items at once (List's `onDelete` offsets, `onMove`) fires once with all of them, and the screen model loops. Translating view positions into domain ids, such as skipping the fixed current-location card, belongs in the screen model, not the view.
+- **Acknowledgments are tasks too.** When the view consumes a one-shot value, such as scrolling to a just-added card, it fires a task (`scrolledToTargetTask`) and the screen model clears the property. The view never resets state by writing it.
+- **Derived values are Properties, computed in the screen model** with `Property(tracking:)` over its `MutableProperty`s, as the list's `showsEmptyState` and sign-in's `submittableUsername` and `showsValidationHint` are. A value the ViewModel would otherwise compute in a getter is computed here instead.
+- **Pass a manager's property straight through** when the screen adds nothing to it (the Units sheet mirrors `PreferencesManager.unitSettings`). Copy it into the screen model's own `MutableProperty` only when the screen reshapes it, as the list does when it combines places, forecasts, and units into cards.
+- **Values reach the view a main-actor turn later.** On iOS 26 a mirrored property updates after the write that caused it, so the view sees a task's effect one turn after the task runs. Text input still keeps up with fast typing, but a screen model test waits briefly for the mirrored value before asserting.
+- **Types inside a Property are `Sendable`.** A state enum nested in a `@MainActor` ViewModel is main-actor isolated and not `Sendable` by default, so it declares the conformance (`enum State: Equatable, Sendable`). `Equatable` matters too: a property only publishes a value that differs from the last one.
+- **The view may keep presentation-only state** that nothing else reads, such as `@FocusState` for the search field or a collapsed section, always with a default value. If the screen model needs to know about it, the view reports it with a task (focusing the search field fires `beginSearchTask`).
 
 A screen that genuinely needs hand-rolled UIKit subclasses `UIViewController` directly, keeps the Builder and the ScreenModel, and skips the SwiftUI leaf and ViewModel. The place pager is the example here: a `UIPageViewController` container whose pages are ordinary `PlaceForecastScreen`s built from their Builders.
 
@@ -361,7 +391,7 @@ Three tiers, chosen by shape. The weather domain was picked partly because it ha
 | A single value or a small struct that is read and saved whole | `PersistentProperty<T>` on the right storage engine: `appEnvironment.propertyFileStore` (per user), `propertyKeychainStore` (secrets), `AppEnvironment.transient.propertyFileStore` (outlives sessions) | The manager, vended as `Property(mirroring:)` | One property per unit and display setting; the signed-in user id and last five usernames (transient) |
 | Tabular data | Slate, opened through `SlateManager` under the user silo | The manager; views never see the store | Places (saved and current location), cached current, 15-minute, hourly, daily, and air-quality rows, log entries |
 | In-memory only | `MutableProperty<T>` in the manager | The manager | Location permission and position, in-flight load state |
-| Screen-local | Values on the screen's ViewModel | The screen model | Search results while searching, edit mode |
+| Screen-local | `MutableProperty<T>` in the screen model, mirrored onto its ViewModel | The screen model | Search text and results, edit mode, the forecast metric |
 | View-local, no observation beyond the view | `@AppStorage` or `@State` | The view | A collapsed section |
 
 A Slate model is a `@SlateEntity` struct with `#Unique` and `#Index` declarations in `Foundation/Models/<Name>Models/`. `make models` runs `bin/scripts/gen_manager_model.sh <Name>`, which writes the mutable, bridge, and schema files into `<Name>ManagerImpl/Generated/`. Logging has its own script, and opens its store directly under the transient silo, because `SlateManager` depends on it. A manager gets its store with `slateManager.provide(for: <Name>SlateSchema.self)` in `init`. The default `.cacheStore` wipes and recreates a store whose schema no longer fits.
@@ -396,6 +426,7 @@ Every manager and screen model gets tests. Tests use Swift Testing and run on th
 - **Fixtures** are static factories on the domain types, such as `Forecast.testForecast(...)`.
 - **Wiring.** A test registers mocks with `InjectionManager.register`, resets the injection container, and builds the Impl or screen model under test, which picks up the mocks through its ordinary `Inject()` fields. Suites run in parallel and the container is global, so the test is `@MainActor` and does all of that without an `await`, and the Impl resolves every `Inject()` in `init`. `AppEnvironment.test(...)` builds an environment that touches neither the keychain nor the app's documents.
 - **Requests.** `StubURLProtocol.makeSession` serves a real `URLSession` from a closure, for testing `NetworkManagerImpl` itself. Everything else uses `MockNetworkManager`.
+- **Screen models are tested through their ViewModel.** A test runs the ViewModel's tasks with `try await viewModel.someTask.run(input)` and asserts on the ViewModel's properties and the mocks' recorded calls, the same surface the view uses. Mirrored properties settle a turn later, so the test polls briefly (a small `settle` helper) before reading them.
 - **What to cover.** Manager logic and state changes, `Domain.init(response:)` parsing against recorded Open-Meteo payloads, user isolation across a container reset, and screen model loading and error translation. Views are checked with previews.
 
 `make test` runs every test target on the simulator, through `xcodebuild test -scheme Modules-Package` in `Modules/`; `swift test` can't build modules that import UIKit. Velocity emits `<Name>Tests` as a `.testTarget` with no product, and `<Name>TestHelpers` as a regular target that any test target can import.

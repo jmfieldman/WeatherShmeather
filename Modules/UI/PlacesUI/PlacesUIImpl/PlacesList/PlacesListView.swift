@@ -13,7 +13,7 @@ import SwiftUIEx
 import WeatherDisplay
 
 public struct PlacesListView: HostedView {
-    @Bindable var viewModel: PlacesListViewModel
+    let viewModel: PlacesListViewModel
     @FocusState private var isSearchFieldFocused: Bool
 
     public init(viewModel: PlacesListViewModel) {
@@ -24,9 +24,9 @@ public struct PlacesListView: HostedView {
         ZStack {
             DesignTokens.screenBackground.ignoresSafeArea()
 
-            if viewModel.isSearching {
+            if viewModel.isSearching.value {
                 SearchResultsView(viewModel: viewModel)
-            } else if viewModel.showsEmptyState {
+            } else if viewModel.showsEmptyState.value {
                 EmptyPlacesView()
             } else {
                 cardList
@@ -36,11 +36,11 @@ public struct PlacesListView: HostedView {
             searchBar
         }
         .onChange(of: isSearchFieldFocused) { _, isFocused in
-            if isFocused, !viewModel.isSearching {
-                viewModel.beginSearch()
+            if isFocused, !viewModel.isSearching.value {
+                viewModel.beginSearchTask.fire()
             }
         }
-        .onChange(of: viewModel.isSearching) { _, isSearching in
+        .onChange(of: viewModel.isSearching.value) { _, isSearching in
             if !isSearching {
                 isSearchFieldFocused = false
             }
@@ -52,9 +52,9 @@ public struct PlacesListView: HostedView {
     private var cardList: some View {
         ScrollViewReader { proxy in
             List {
-                ForEach(viewModel.cards) { card in
+                ForEach(viewModel.cards.value) { card in
                     Button {
-                        viewModel.onSelectCard(card.id)
+                        viewModel.selectCardTask.fire(card.id)
                     } label: {
                         PlaceCardView(card: card)
                     }
@@ -66,29 +66,29 @@ public struct PlacesListView: HostedView {
                     .deleteDisabled(card.isCurrentLocation)
                     .moveDisabled(card.isCurrentLocation)
                 }
-                .onDelete { viewModel.deleteCards(atOffsets: $0) }
-                .onMove { viewModel.moveCards(fromOffsets: $0, toOffset: $1) }
+                .onDelete { viewModel.deleteTask.fire($0) }
+                .onMove { viewModel.moveTask.fire(CardMove(source: $0, destination: $1)) }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .refreshable { await viewModel.onRefresh() }
-            .environment(\.editMode, .constant(viewModel.isEditing ? .active : .inactive))
-            .animation(.default, value: viewModel.cards)
-            .onChange(of: viewModel.cards) { scrollToTarget(with: proxy) }
-            .onChange(of: viewModel.scrollTarget) { scrollToTarget(with: proxy) }
+            .refreshable { try? await viewModel.refreshTask.run() }
+            .environment(\.editMode, .constant(viewModel.isEditing.value ? .active : .inactive))
+            .animation(.default, value: viewModel.cards.value)
+            .onChange(of: viewModel.cards.value) { scrollToTarget(with: proxy) }
+            .onChange(of: viewModel.scrollTarget.value) { scrollToTarget(with: proxy) }
         }
     }
 
     /// The target may arrive before its card does, so this runs on both changes.
     private func scrollToTarget(with proxy: ScrollViewProxy) {
-        guard let target = viewModel.scrollTarget, viewModel.cards.contains(where: { $0.id == target }) else {
+        guard let target = viewModel.scrollTarget.value, viewModel.cards.value.contains(where: { $0.id == target }) else {
             return
         }
 
         withAnimation {
             proxy.scrollTo(target, anchor: .center)
         }
-        viewModel.scrollTarget = nil
+        viewModel.scrolledToTargetTask.fire()
     }
 
     // MARK: Search bar
@@ -99,14 +99,14 @@ public struct PlacesListView: HostedView {
                 HStack(spacing: .s) {
                     Image(systemSymbol: .magnifyingglass)
                         .foregroundStyle(DesignTokens.secondaryText)
-                    TextField(String.PlacesUI.placesSearchPlaceholder, text: $viewModel.searchText)
+                    TextField(String.PlacesUI.placesSearchPlaceholder, text: searchText)
                         .textStyle(.body)
                         .focused($isSearchFieldFocused)
                         .submitLabel(.search)
                         .autocorrectionDisabled()
-                    if !viewModel.searchText.isEmpty {
+                    if !viewModel.searchText.value.isEmpty {
                         Button {
-                            viewModel.searchText = ""
+                            viewModel.searchTextTask.fire("")
                         } label: {
                             Image(systemSymbol: .xmarkCircleFill)
                                 .foregroundStyle(DesignTokens.tertiaryText)
@@ -118,9 +118,9 @@ public struct PlacesListView: HostedView {
                 .frame(minHeight: ControlHeight.primary)
                 .glassEffect(.regular.interactive(), in: .capsule)
 
-                if viewModel.isSearching {
+                if viewModel.isSearching.value {
                     Button {
-                        viewModel.endSearch()
+                        viewModel.endSearchTask.fire()
                     } label: {
                         Image(systemSymbol: .xmark)
                             .font(TextStyle.headline.font)
@@ -134,7 +134,13 @@ public struct PlacesListView: HostedView {
         }
         .padding(.horizontal, .gutter)
         .padding(.bottom, .s)
-        .animation(.default, value: viewModel.isSearching)
+        .animation(.default, value: viewModel.isSearching.value)
+    }
+
+    /// The field shows the screen's text and reports edits as requests;
+    /// the screen model decides what the text becomes.
+    private var searchText: Binding<String> {
+        Binding(get: { viewModel.searchText.value }, set: { viewModel.searchTextTask.fire($0) })
     }
 }
 
@@ -233,7 +239,7 @@ struct SearchResultsView: View {
     let viewModel: PlacesListViewModel
 
     var body: some View {
-        switch viewModel.searchState {
+        switch viewModel.searchState.value {
         case .idle:
             Color.clear
 
@@ -317,7 +323,7 @@ struct EmptyPlacesView: View {
 
 private extension PlacesListViewModel {
     static func preview(cards: [PlaceCard]) -> PlacesListViewModel {
-        PlacesListViewModel(cards: cards, hasLoaded: true, addTask: SerialTask { _ in })
+        PlacesListViewModel(cards: .constant(cards), showsEmptyState: .constant(cards.isEmpty))
     }
 
     static let previewCards = [

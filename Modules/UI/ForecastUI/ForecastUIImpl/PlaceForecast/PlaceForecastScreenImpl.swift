@@ -38,7 +38,12 @@ public final class PlaceForecastScreenImpl: HostingScreen<PlaceForecastScreenMod
 @MainActor
 public final class PlaceForecastScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?
-    public private(set) lazy var viewModel: PlaceForecastViewModel = .init(
+    public private(set) lazy var viewModel = PlaceForecastViewModel(
+        state: Property(mirroring: state),
+        metric: Property(mirroring: metric),
+        metricTask: .weak(self) { `self`, metric in
+            self.metric.value = metric
+        },
         retryTask: .weak(self) { `self` in
             // With no forecast on hand, a stale check always fetches.
             self.forecastManager.refreshIfStale(placeId: self.placeId)
@@ -46,6 +51,8 @@ public final class PlaceForecastScreenModel: HostingScreenModel {
     )
 
     let placeId: String
+    private let state = MutableProperty<PlaceForecastViewModel.State>(.loading(name: ""))
+    private let metric = MutableProperty<PlaceForecastViewModel.Metric>(.temperature)
     private let placesManager: PlacesManager = Inject()
     private let forecastManager: ForecastManager = Inject()
     private let preferencesManager: PreferencesManager = Inject()
@@ -76,11 +83,11 @@ public final class PlaceForecastScreenModel: HostingScreenModel {
         }
 
         if let forecast {
-            viewModel.state = .loaded(PlaceForecastContent.make(place: place, forecast: forecast, settings: settings, now: Date()))
+            state.value = .loaded(PlaceForecastContent.make(place: place, forecast: forecast, settings: settings, now: Date()))
         } else if let error {
-            viewModel.state = .failed(name: place.name, message: error.errorBody)
+            state.value = .failed(name: place.name, message: error.errorBody)
         } else {
-            viewModel.state = .loading(name: place.name)
+            state.value = .loading(name: place.name)
         }
     }
 }
