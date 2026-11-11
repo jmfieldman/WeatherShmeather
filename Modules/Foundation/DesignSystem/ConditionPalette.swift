@@ -23,6 +23,10 @@ public enum ConditionPalette {
     /// Text and icons drawn on any of the colors above.
     public static let foreground = Color.white
     public static let secondaryForeground = Color.white.opacity(0.75)
+    /// Precipitation chances, readable on every condition color.
+    public static let precipitation = Color(red: 0.62, green: 0.89, blue: 1.0)
+    /// The fill of a section card on a condition color: a flat, lighter wash.
+    public static let cardFill = Color.white.opacity(0.14)
     /// Tracks and dividers on a condition color.
     public static let subtleForeground = Color.white.opacity(0.25)
 }

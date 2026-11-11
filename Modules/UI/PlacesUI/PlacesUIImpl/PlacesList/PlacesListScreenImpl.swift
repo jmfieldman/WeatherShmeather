@@ -5,6 +5,7 @@
 
 import Common
 import ForecastManager
+import ForecastUI
 import Foundation
 import Inject
 import Logging
@@ -156,6 +157,9 @@ public final class PlacesListScreenModel: HostingScreenModel {
         onSearchTextChange: { [weak self] text in
             self?.searchTextChanged(text)
         },
+        onSelectCard: { [weak self] placeId in
+            self?.openPager(at: placeId, animated: true)
+        },
         onRefresh: { [weak self] in
             await self?.forecastManager.refreshAll()
         },
@@ -169,6 +173,9 @@ public final class PlacesListScreenModel: HostingScreenModel {
     /// The pending or running search; replaced on every keystroke.
     private var searchBag = TaskBag()
     private var latestResults: [PlaceSearchResult] = []
+
+    /// The pager opens by itself once, when the list first loads.
+    private var hasOpenedInitialPage = false
 
     public init() {
         // Cards combine three sources: the places, their forecasts, and the
@@ -193,6 +200,7 @@ public final class PlacesListScreenModel: HostingScreenModel {
             placesManager.hasLoaded.value
         } perform: { [weak self] hasLoaded in
             self?.viewModel.hasLoaded = hasLoaded
+            self?.openInitialPageIfNeeded()
         }
 
         // A place added elsewhere, or this one, marks its result as saved.
@@ -222,6 +230,29 @@ public final class PlacesListScreenModel: HostingScreenModel {
             timeZone: forecast.timeZone,
             updatedAt: forecast.fetchedAt,
         )
+    }
+
+    /// At launch and sign-in the weather experience opens on a place, not
+    /// the list: the current location if there is one, else the first saved
+    /// place. With no places, it stays on the list's empty state.
+    private func openInitialPageIfNeeded() {
+        guard !hasOpenedInitialPage, placesManager.hasLoaded.value else {
+            return
+        }
+
+        hasOpenedInitialPage = true
+        if let first = placesManager.places.value.first {
+            openPager(at: first.id, animated: false)
+        }
+    }
+
+    private func openPager(at placeId: String, animated: Bool) {
+        guard !viewModel.isEditing, !viewModel.isSearching else {
+            return
+        }
+
+        let pager = PlacePagerScreenBuilder(initialPlaceId: placeId).build()
+        viewController?.navigationController?.pushViewController(pager, animated: animated)
     }
 
     func logOut() {

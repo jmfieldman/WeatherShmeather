@@ -1,0 +1,8 @@
+- ForecastManager
+- ForecastUIImpl
+- Foundation
+- PlacesManager
+- PlacesManagerTestHelpers
+- PreferencesManager
+- PreferencesManagerTestHelpers
+- Testing

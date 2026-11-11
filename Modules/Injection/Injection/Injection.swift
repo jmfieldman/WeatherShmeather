@@ -7,6 +7,8 @@ import DeviceLocationManager
 import DeviceLocationManagerImpl
 import ForecastManager
 import ForecastManagerImpl
+import ForecastUI
+import ForecastUIImpl
 @_exported import Inject
 import NetworkManager
 import NetworkManagerImpl
@@ -55,6 +57,8 @@ public extension InjectionManager {
 @MainActor
 public extension BuilderManager {
     static func registerBuilders() {
+        BuilderManager.unsafeRegister(PlaceForecastScreenBuilder.self) { PlaceForecastScreenImpl(builder: $0 as! PlaceForecastScreenBuilder) }
+        BuilderManager.unsafeRegister(PlacePagerScreenBuilder.self) { PlacePagerScreenImpl(builder: $0 as! PlacePagerScreenBuilder) }
         BuilderManager.unsafeRegister(PlacesListScreenBuilder.self) { PlacesListScreenImpl(builder: $0 as! PlacesListScreenBuilder) }
         BuilderManager.unsafeRegister(RootViewControllerBuilder.self) { RootViewControllerImpl(builder: $0 as! RootViewControllerBuilder) }
         BuilderManager.unsafeRegister(SessionCoordinatorBuilder.self) { SessionCoordinatorImpl(builder: $0 as! SessionCoordinatorBuilder) }

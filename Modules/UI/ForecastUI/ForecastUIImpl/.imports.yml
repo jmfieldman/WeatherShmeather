@@ -1,0 +1,14 @@
+- DesignSystem
+- ForecastManager
+- ForecastUI
+- ForecastUIResources
+- Foundation
+- Inject
+- PlacesManager
+- PreferencesManager
+- SFSafeSymbols
+- SwiftAsyncEx
+- SwiftUI
+- SwiftUIEx
+- UIKit
+- WeatherDisplay

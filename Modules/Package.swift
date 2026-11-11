@@ -23,6 +23,9 @@ let package = Package(
         .library(name: "ForecastManagerResources", targets: ["ForecastManagerResources"]),
         .library(name: "ForecastManagerTestHelpers", targets: ["ForecastManagerTestHelpers"]),
         .library(name: "ForecastModels", targets: ["ForecastModels"]),
+        .library(name: "ForecastUIImpl", targets: ["ForecastUIImpl"]),
+        .library(name: "ForecastUI", targets: ["ForecastUI"]),
+        .library(name: "ForecastUIResources", targets: ["ForecastUIResources"]),
         .library(name: "Injection", targets: ["Injection"]),
         .library(name: "Logging", targets: ["Logging"]),
         .library(name: "NetworkManagerImpl", targets: ["NetworkManagerImpl"]),
@@ -265,12 +268,68 @@ let package = Package(
             swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .target(
+            name: "ForecastUIImpl",
+            dependencies: [
+                "DesignSystem",
+                "ForecastManager",
+                "ForecastUI",
+                "ForecastUIResources",
+                "PlacesManager",
+                "PreferencesManager",
+                "WeatherDisplay",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+                .product(name: "SwiftUIEx", package: "SwiftUIEx"),
+            ],
+            path: "UI/ForecastUI/ForecastUIImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastUI",
+            dependencies: [
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/ForecastUI/ForecastUI",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastUIResources",
+            dependencies: [
+            ],
+            path: "UI/ForecastUI/ForecastUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "ForecastUITests",
+            dependencies: [
+                "ForecastManager",
+                "ForecastUIImpl",
+                "PlacesManager",
+                "PlacesManagerTestHelpers",
+                "PreferencesManager",
+                "PreferencesManagerTestHelpers",
+            ],
+            path: "UI/ForecastUI/ForecastUITests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
             name: "Injection",
             dependencies: [
                 "DeviceLocationManager",
                 "DeviceLocationManagerImpl",
                 "ForecastManager",
                 "ForecastManagerImpl",
+                "ForecastUI",
+                "ForecastUIImpl",
                 "NetworkManager",
                 "NetworkManagerImpl",
                 "PlacesManager",
@@ -492,6 +551,7 @@ let package = Package(
                 "Common",
                 "DesignSystem",
                 "ForecastManager",
+                "ForecastUI",
                 "Logging",
                 "PlacesManager",
                 "PlacesUI",
