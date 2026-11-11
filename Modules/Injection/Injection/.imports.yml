@@ -1,5 +1,7 @@
 - DeviceLocationManager
 - DeviceLocationManagerImpl
+- ForecastManager
+- ForecastManagerImpl
 - Inject
 - NetworkManager
 - NetworkManagerImpl

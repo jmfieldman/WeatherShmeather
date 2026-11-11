@@ -10,6 +10,7 @@ import SFSafeSymbols
 import SwiftAsyncEx
 import SwiftUI
 import SwiftUIEx
+import WeatherDisplay
 
 public struct PlacesListView: HostedView {
     @Bindable var viewModel: PlacesListViewModel
@@ -70,6 +71,7 @@ public struct PlacesListView: HostedView {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .refreshable { await viewModel.onRefresh() }
             .environment(\.editMode, .constant(viewModel.isEditing ? .active : .inactive))
             .animation(.default, value: viewModel.cards)
             .onChange(of: viewModel.cards) { scrollToTarget(with: proxy) }
@@ -141,21 +143,50 @@ public struct PlacesListView: HostedView {
 struct PlaceCardView: View {
     let card: PlaceCard
 
+    /// A card whose weather is older than this says how old it is.
+    private static let staleAge: TimeInterval = 60 * 60
+
     var body: some View {
         HStack(alignment: .top, spacing: .m) {
-            VStack(alignment: .leading, spacing: .xs) {
+            VStack(alignment: .leading, spacing: .xxs) {
                 Text(card.name)
-                    .textStyle(.title)
+                    .textStyle(.title, color: foreground)
                     .lineLimit(1)
                 subtitle
+                Spacer(minLength: .s)
+                footnote
             }
             Spacer(minLength: 0)
+            if let weather = card.weather {
+                VStack(alignment: .trailing, spacing: .xxs) {
+                    Text(weather.temperature)
+                        .font(TextStyle.cardTemperature.font)
+                        .foregroundStyle(foreground)
+                        .monospacedDigit()
+                    Spacer(minLength: .s)
+                    Text(weather.highLow)
+                        .textStyle(.callout, color: foreground)
+                        .monospacedDigit()
+                }
+            }
         }
         .padding(.m)
         .frame(maxWidth: .infinity, minHeight: RowHeight.card, alignment: .topLeading)
-        .background(DesignTokens.groupedBackground, in: .rect(cornerRadius: Radius.card))
+        .background(background, in: .rect(cornerRadius: Radius.card))
         .shadow(color: DesignTokens.softShadow, radius: .s, y: .xxs)
         .contentShape(.rect(cornerRadius: Radius.card))
+    }
+
+    private var background: Color {
+        card.weather.map { $0.weatherCode.background(isDay: $0.isDay) } ?? DesignTokens.groupedBackground
+    }
+
+    private var foreground: Color {
+        card.weather == nil ? DesignTokens.primaryText : ConditionPalette.foreground
+    }
+
+    private var secondaryForeground: Color {
+        card.weather == nil ? DesignTokens.secondaryText : ConditionPalette.secondaryForeground
     }
 
     @ViewBuilder
@@ -166,15 +197,32 @@ struct PlaceCardView: View {
                     .imageScale(.small)
                 Text(String.PlacesUI.placesMyLocation)
             }
-            .textStyle(.callout, color: DesignTokens.accent)
+            .textStyle(.callout, color: card.weather == nil ? DesignTokens.accent : foreground)
         } else if let timeZone = card.timeZone {
             TimelineView(.everyMinute) { context in
                 Text(context.date, format: .dateTime.hour().minute())
-                    .textStyle(.callout, color: DesignTokens.secondaryText)
+                    .textStyle(.callout, color: foreground)
                     // Text applies the environment's time zone to a date
                     // format, overriding any zone set on the format itself.
                     .environment(\.timeZone, timeZone)
             }
+        }
+    }
+
+    /// The condition, or how old the weather is once that's worth saying.
+    @ViewBuilder
+    private var footnote: some View {
+        if let weather = card.weather {
+            TimelineView(.everyMinute) { context in
+                if context.date.timeIntervalSince(weather.updatedAt) > Self.staleAge {
+                    Text(String.PlacesUI.placesUpdated(weather.updatedAt.formatted(.relative(presentation: .named))))
+                        .textStyle(.callout, color: secondaryForeground)
+                } else {
+                    Text(weather.condition)
+                        .textStyle(.callout, color: secondaryForeground)
+                }
+            }
+            .lineLimit(1)
         }
     }
 }

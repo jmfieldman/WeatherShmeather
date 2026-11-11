@@ -11,6 +11,8 @@ import SwiftUI
 public enum TextStyle {
     /// The huge, light numerals of a temperature reading.
     case display
+    /// A place card's current temperature.
+    case cardTemperature
     /// A screen's single most important line, such as the app name on sign-in.
     case hero
     case title
@@ -23,6 +25,7 @@ public enum TextStyle {
     public var font: Font {
         switch self {
         case .display: .system(size: 96, weight: .thin, design: .rounded)
+        case .cardTemperature: .system(size: 48, weight: .light, design: .rounded)
         case .hero: .system(.largeTitle, design: .rounded, weight: .bold)
         case .title: .system(.title2, design: .rounded, weight: .semibold)
         case .headline: .headline
@@ -35,7 +38,7 @@ public enum TextStyle {
 
     public var color: Color {
         switch self {
-        case .display, .hero, .title, .headline, .body, .callout: DesignTokens.primaryText
+        case .display, .cardTemperature, .hero, .title, .headline, .body, .callout: DesignTokens.primaryText
         case .caption, .finePrint: DesignTokens.secondaryText
         }
     }

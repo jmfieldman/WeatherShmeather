@@ -14,3 +14,4 @@
 "places_search_saved" = "In your list";
 "places_empty_title" = "No Places Yet";
 "places_empty_body" = "Search for a city below to add it to your list.";
+"places_updated" = "Updated %@";

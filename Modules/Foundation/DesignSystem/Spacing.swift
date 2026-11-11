@@ -33,5 +33,5 @@ public enum ControlHeight {
 /// Fixed row heights.
 public enum RowHeight {
     /// The minimum height of a place card in the list.
-    public static let card: CGFloat = 88
+    public static let card: CGFloat = 112
 }

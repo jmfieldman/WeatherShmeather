@@ -3,6 +3,7 @@
 //  Copyright © 2026 WeatherShmeather.
 //
 
+import ForecastManager
 import Foundation
 import PlacesManager
 import SwiftAsyncEx
@@ -15,21 +16,55 @@ public struct PlaceCard: Hashable, Sendable, Identifiable {
     /// The place's time zone, for its local time. `nil` for the current
     /// location, which shows "My Location" instead.
     public let timeZone: TimeZone?
+    /// `nil` until the place's first forecast arrives.
+    public let weather: CardWeather?
 
-    public init(id: String, name: String, isCurrentLocation: Bool, timeZone: TimeZone?) {
+    public init(id: String, name: String, isCurrentLocation: Bool, timeZone: TimeZone?, weather: CardWeather? = nil) {
         self.id = id
         self.name = name
         self.isCurrentLocation = isCurrentLocation
         self.timeZone = timeZone
+        self.weather = weather
     }
 
-    public init(place: Place) {
+    public init(place: Place, weather: CardWeather?) {
         self.init(
             id: place.id,
             name: place.name,
             isCurrentLocation: place.isCurrentLocation,
-            timeZone: place.isCurrentLocation ? nil : place.timeZone,
+            timeZone: place.isCurrentLocation ? nil : (weather?.timeZone ?? place.timeZone),
+            weather: weather,
         )
+    }
+}
+
+/// A card's weather, already formatted in the user's units.
+public struct CardWeather: Hashable, Sendable {
+    public let temperature: String
+    public let condition: String
+    public let highLow: String
+    public let weatherCode: WeatherCode
+    public let isDay: Bool
+    public let timeZone: TimeZone
+    /// When the weather was fetched, so an old card can say so.
+    public let updatedAt: Date
+
+    public init(
+        temperature: String,
+        condition: String,
+        highLow: String,
+        weatherCode: WeatherCode,
+        isDay: Bool,
+        timeZone: TimeZone,
+        updatedAt: Date,
+    ) {
+        self.temperature = temperature
+        self.condition = condition
+        self.highLow = highLow
+        self.weatherCode = weatherCode
+        self.isDay = isDay
+        self.timeZone = timeZone
+        self.updatedAt = updatedAt
     }
 }
 
@@ -84,6 +119,7 @@ public final class PlacesListViewModel {
     @ObservationIgnored let onMove: @MainActor (IndexSet, Int) -> Void
     @ObservationIgnored let onSearchTextChange: @MainActor (String) -> Void
     @ObservationIgnored let onSelectCard: @MainActor (String) -> Void
+    @ObservationIgnored let onRefresh: @MainActor () async -> Void
 
     public init(
         cards: [PlaceCard] = [],
@@ -93,6 +129,7 @@ public final class PlacesListViewModel {
         onMove: @escaping @MainActor (IndexSet, Int) -> Void = { _, _ in },
         onSearchTextChange: @escaping @MainActor (String) -> Void = { _ in },
         onSelectCard: @escaping @MainActor (String) -> Void = { _ in },
+        onRefresh: @escaping @MainActor () async -> Void = {},
     ) {
         self.cards = cards
         self.hasLoaded = hasLoaded
@@ -101,6 +138,7 @@ public final class PlacesListViewModel {
         self.onMove = onMove
         self.onSearchTextChange = onSearchTextChange
         self.onSelectCard = onSelectCard
+        self.onRefresh = onRefresh
     }
 
     /// The hero shows once the list is known to be empty, and never over search.

@@ -5,6 +5,8 @@
 
 import DeviceLocationManager
 import DeviceLocationManagerImpl
+import ForecastManager
+import ForecastManagerImpl
 @_exported import Inject
 import NetworkManager
 import NetworkManagerImpl
@@ -31,6 +33,7 @@ import SlateManagerImpl
 public extension InjectionManager {
     static func registerInjections() {
         InjectionManager.unsafeRegister(DeviceLocationManager.self) { DeviceLocationManagerImpl() }
+        InjectionManager.unsafeRegister(ForecastManager.self) { ForecastManagerImpl() }
         InjectionManager.unsafeRegister(NetworkManager.self) { NetworkManagerImpl() }
         InjectionManager.unsafeRegister(PlacesManager.self) { PlacesManagerImpl() }
         InjectionManager.unsafeRegister(PreferencesManager.self) { PreferencesManagerImpl() }
@@ -40,6 +43,7 @@ public extension InjectionManager {
 
     static func activateInjections() {
         _ = Inject(DeviceLocationManager.self)
+        _ = Inject(ForecastManager.self)
         _ = Inject(NetworkManager.self)
         _ = Inject(PlacesManager.self)
         _ = Inject(PreferencesManager.self)

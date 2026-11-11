@@ -97,6 +97,7 @@ resources:
 models:
 	@bin/scripts/gen_logging_model.sh
 	@bin/scripts/gen_manager_model.sh Places
+	@bin/scripts/gen_manager_model.sh Forecast
 	@$(MAKE) format
 
 # Run the module test targets on the simulator. `swift test` can't build modules

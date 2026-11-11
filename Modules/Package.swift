@@ -18,6 +18,11 @@ let package = Package(
         .library(name: "DeviceLocationManagerImpl", targets: ["DeviceLocationManagerImpl"]),
         .library(name: "DeviceLocationManager", targets: ["DeviceLocationManager"]),
         .library(name: "DeviceLocationManagerTestHelpers", targets: ["DeviceLocationManagerTestHelpers"]),
+        .library(name: "ForecastManagerImpl", targets: ["ForecastManagerImpl"]),
+        .library(name: "ForecastManager", targets: ["ForecastManager"]),
+        .library(name: "ForecastManagerResources", targets: ["ForecastManagerResources"]),
+        .library(name: "ForecastManagerTestHelpers", targets: ["ForecastManagerTestHelpers"]),
+        .library(name: "ForecastModels", targets: ["ForecastModels"]),
         .library(name: "Injection", targets: ["Injection"]),
         .library(name: "Logging", targets: ["Logging"]),
         .library(name: "NetworkManagerImpl", targets: ["NetworkManagerImpl"]),
@@ -52,6 +57,8 @@ let package = Package(
         .library(name: "SlateManagerImpl", targets: ["SlateManagerImpl"]),
         .library(name: "SlateManager", targets: ["SlateManager"]),
         .library(name: "SlateManagerTestHelpers", targets: ["SlateManagerTestHelpers"]),
+        .library(name: "WeatherDisplay", targets: ["WeatherDisplay"]),
+        .library(name: "WeatherDisplayResources", targets: ["WeatherDisplayResources"]),
     ],
     dependencies: [
         .package(name: "Inject", path: "../local/Packages/Inject"),
@@ -163,10 +170,107 @@ let package = Package(
             swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .target(
+            name: "ForecastManagerImpl",
+            dependencies: [
+                "AppEnvironment",
+                "DeviceLocationManager",
+                "ForecastManager",
+                "ForecastModels",
+                "Logging",
+                "NetworkManager",
+                "NetworkModels",
+                "PlacesManager",
+                "SlateManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/ForecastManager/ForecastManagerImpl",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastManager",
+            dependencies: [
+                "AppEnvironment",
+                "Common",
+                "DeviceLocationManager",
+                "ForecastManagerResources",
+                "ForecastModels",
+                "Logging",
+                "NetworkManager",
+                "NetworkModels",
+                "PlacesManager",
+                "SlateManager",
+                .product(name: "Inject", package: "Inject"),
+                .product(name: "Slate", package: "Slate"),
+                .product(name: "SlateSchema", package: "Slate"),
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/ForecastManager/ForecastManager",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastManagerResources",
+            dependencies: [
+            ],
+            path: "Managers/ForecastManager/ForecastManagerResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastManagerTestHelpers",
+            dependencies: [
+                "ForecastManager",
+                .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
+            ],
+            path: "Managers/ForecastManager/ForecastManagerTestHelpers",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "ForecastManagerTests",
+            dependencies: [
+                "AppEnvironment",
+                "AppEnvironmentTestHelpers",
+                "ForecastManager",
+                "ForecastManagerImpl",
+                "NetworkManager",
+                "NetworkManagerTestHelpers",
+                "PlacesManager",
+                "PlacesManagerTestHelpers",
+                "SlateManager",
+                "SlateManagerTestHelpers",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "Managers/ForecastManager/ForecastManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "ForecastModels",
+            dependencies: [
+                .product(name: "SlateSchema", package: "Slate"),
+            ],
+            path: "Foundation/Models/ForecastModels",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
             name: "Injection",
             dependencies: [
                 "DeviceLocationManager",
                 "DeviceLocationManagerImpl",
+                "ForecastManager",
+                "ForecastManagerImpl",
                 "NetworkManager",
                 "NetworkManagerImpl",
                 "PlacesManager",
@@ -387,6 +491,7 @@ let package = Package(
             dependencies: [
                 "Common",
                 "DesignSystem",
+                "ForecastManager",
                 "Logging",
                 "PlacesManager",
                 "PlacesUI",
@@ -394,6 +499,7 @@ let package = Package(
                 "PreferencesManager",
                 "SessionManager",
                 "SettingsUI",
+                "WeatherDisplay",
                 .product(name: "Inject", package: "Inject"),
                 .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
                 .product(name: "SwiftAsyncEx", package: "SwiftAsyncEx"),
@@ -746,6 +852,28 @@ let package = Package(
                 .product(name: "Slate", package: "Slate"),
             ],
             path: "Managers/SlateManager/SlateManagerTests",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "WeatherDisplay",
+            dependencies: [
+                "DesignSystem",
+                "ForecastManager",
+                "WeatherDisplayResources",
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
+            ],
+            path: "UI/WeatherDisplay/WeatherDisplay",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .target(
+            name: "WeatherDisplayResources",
+            dependencies: [
+            ],
+            path: "UI/WeatherDisplay/WeatherDisplayResources",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],

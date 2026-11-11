@@ -214,10 +214,10 @@ The managers, each chosen to show one pattern (features are in [PRODUCT.md](../P
 | `SessionManager` | The signed-in username and the last five usernames, on the transient environment | Persistent properties that outlive a session; the container rebuild on sign-in and log out |
 | `DeviceLocationManager` | CoreLocation permission and the device's location, as `Property` values | Wrapping a system callback API as reactive state |
 | `PlacesManager` | The `StoredPlace` Slate table, including the one `isCurrentLocation` row, and place search | A flag row the manager overwrites as `DeviceLocationManager` reports moves of more than a kilometer, and deletes while permission isn't granted; a `SlateStream` republished as `places`; search as a plain typed-throws call that the screen model debounces |
-| `ForecastManager` | Fetching and caching forecast and air-quality rows per place | Slate as a cache; observing `PlacesManager.places` to fetch new places and delete removed ones; freshness rules |
+| `ForecastManager` | Fetching forecast and air quality per place, cached in four Slate tables (a summary row plus hourly, daily, and 15-minute series) | Slate as a cache, read once at launch and republished by hand after each write (the counterpart to `PlacesManager`'s stream); following `PlacesManager.places` to fetch new or moved places and delete removed ones; one fetch in flight per place; the 15-minute freshness rule with an injectable clock |
 | `PreferencesManager` | One `PersistentProperty` per unit and display setting, defaulting to the device's region | Single values with `PersistentProperty`; `resolvedTemperatureUnit` and `unitSettings` derived with `Property(tracking:)`; a `WeatherFormatter` value built from `unitSettings` turns stored metric values into strings |
 
-The graph is acyclic: `PlacesManager` depends on `DeviceLocationManager`, and `ForecastManager` depends on `PlacesManager`. `PreferencesManager` depends on nothing, and screens combine its settings with the canonical metric values when they format.
+The graph is acyclic: `PlacesManager` depends on `DeviceLocationManager`, and `ForecastManager` depends on `PlacesManager`. Condition names, symbols, and colors live in `UI/WeatherDisplay`, a shared UI module, because both the cards and the forecast page draw them. `PreferencesManager` depends on nothing, and screens combine its settings with the canonical metric values when they format.
 
 ### Network resources
 
@@ -236,7 +236,7 @@ struct GetForecastResource: NetworkRestResource {
 }
 ```
 
-Rules: wire models are private to the manager Impl and mirror Open-Meteo's response field for field; Open-Meteo's columnar arrays (`hourly.time[]`, `hourly.temperature_2m[]`, …) are zipped into row-shaped domain values by a `Domain.init(response:)` extension in the Impl; the domain type the manager vends lives in the API module (or a shared `<Domain>Models` module) and never imports transport types.
+Requests ask for `timeformat=unixtime`, so every time arrives as an instant (daily times are local midnight at the place), and `timezone=auto`, so days follow the place. Tests parse responses recorded from the live API (`ForecastFixtures.swift`). Rules: wire models are private to the manager Impl and mirror Open-Meteo's response field for field; Open-Meteo's columnar arrays (`hourly.time[]`, `hourly.temperature_2m[]`, …) are zipped into row-shaped domain values by a `Domain.init(response:)` extension in the Impl; the domain type the manager vends lives in the API module (or a shared `<Domain>Models` module) and never imports transport types.
 
 `NetworkService` is an enum with one case per Open-Meteo host, since Open-Meteo splits its APIs across subdomains:
 

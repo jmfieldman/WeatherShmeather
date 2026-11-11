@@ -1,0 +1,15 @@
+{
+  "files" : [
+    "DatabaseStoredDailyForecast.swift",
+    "DatabaseStoredForecastSummary.swift",
+    "DatabaseStoredHourlyForecast.swift",
+    "DatabaseStoredMinutelyPrecipitation.swift",
+    "ForecastSlateSchema.swift",
+    "StoredDailyForecast+SlateBridge.swift",
+    "StoredForecastSummary+SlateBridge.swift",
+    "StoredHourlyForecast+SlateBridge.swift",
+    "StoredMinutelyPrecipitation+SlateBridge.swift"
+  ],
+  "generatorVersion" : 1,
+  "schemaFingerprint" : "diagnostic:fa0ee26ed762052f"
+}

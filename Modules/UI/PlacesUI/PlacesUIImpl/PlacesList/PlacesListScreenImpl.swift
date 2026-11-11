@@ -4,6 +4,7 @@
 //
 
 import Common
+import ForecastManager
 import Foundation
 import Inject
 import Logging
@@ -17,6 +18,7 @@ import SFSafeSymbols
 import SwiftAsyncEx
 import SwiftUIEx
 import UIKit
+import WeatherDisplay
 
 /// How long typing must pause before a search runs.
 private let kSearchDebounce: Duration = .milliseconds(350)
@@ -154,23 +156,36 @@ public final class PlacesListScreenModel: HostingScreenModel {
         onSearchTextChange: { [weak self] text in
             self?.searchTextChanged(text)
         },
+        onRefresh: { [weak self] in
+            await self?.forecastManager.refreshAll()
+        },
     )
 
     private let placesManager: PlacesManager = Inject()
     private let sessionManager: SessionManager = Inject()
     private let preferencesManager: PreferencesManager = Inject()
+    private let forecastManager: ForecastManager = Inject()
 
     /// The pending or running search; replaced on every keystroke.
     private var searchBag = TaskBag()
     private var latestResults: [PlaceSearchResult] = []
 
     public init() {
-        Task.observe(bindTo: self) { [placesManager] in
-            placesManager.places.value
-        } perform: { [weak self] places in
-            self?.viewModel.cards = places.map(PlaceCard.init(place:))
-            if self?.viewModel.canEdit == false {
-                self?.viewModel.isEditing = false
+        // Cards combine three sources: the places, their forecasts, and the
+        // units to show them in. A change to any one rebuilds the cards.
+        Task.observe(bindTo: self) { [placesManager, forecastManager, preferencesManager] in
+            (placesManager.places.value, forecastManager.forecasts.value, preferencesManager.unitSettings.value)
+        } perform: { [weak self] places, forecasts, settings in
+            guard let self else {
+                return
+            }
+
+            let formatter = WeatherFormatter(settings: settings)
+            viewModel.cards = places.map { place in
+                PlaceCard(place: place, weather: forecasts[place.id].map { Self.cardWeather($0, formatter: formatter) })
+            }
+            if !viewModel.canEdit {
+                viewModel.isEditing = false
             }
         }
 
@@ -190,6 +205,23 @@ public final class PlacesListScreenModel: HostingScreenModel {
 
     func screenDidAppear() {
         placesManager.requestLocationAuthorizationIfNeeded()
+        forecastManager.refreshAllIfStale()
+    }
+
+    static func cardWeather(_ forecast: Forecast, formatter: WeatherFormatter) -> CardWeather {
+        let current = forecast.current
+        let highLow = forecast.today.map {
+            String.highLow(high: formatter.temperature(celsius: $0.high), low: formatter.temperature(celsius: $0.low))
+        } ?? ""
+        return CardWeather(
+            temperature: formatter.temperature(celsius: current.temperature),
+            condition: current.weatherCode.name(isDay: current.isDay),
+            highLow: highLow,
+            weatherCode: current.weatherCode,
+            isDay: current.isDay,
+            timeZone: forecast.timeZone,
+            updatedAt: forecast.fetchedAt,
+        )
     }
 
     func logOut() {

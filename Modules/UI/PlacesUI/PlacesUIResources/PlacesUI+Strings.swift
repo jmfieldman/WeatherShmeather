@@ -60,5 +60,11 @@ public extension String {
 
         /// "Weather"
         public static let placesTitle: String = .init(localized: "places_title", defaultValue: "Weather", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Updated %@"
+        public static func placesUpdated(_ arg0: String) -> String {
+            let str = String(localized: "places_updated", defaultValue: "Updated %@", table: "PlacesUI", bundle: .PlacesUIResources)
+            return String(format: str, arguments: [arg0])
+        }
     }
 }
