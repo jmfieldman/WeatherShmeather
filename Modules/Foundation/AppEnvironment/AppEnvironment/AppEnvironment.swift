@@ -84,19 +84,10 @@ public extension AppEnvironment {
         return URLSession(configuration: configuration)
     }()
 
-    /// The one cross-user store, for what must be readable before any user's
-    /// environment exists: who is signed in, and who has signed in before.
-    static let globalPersistentPropertiesStore: PersistentPropertyStorageEngine = createPropertyFileStore(
-        documentSiloUrl: detectedDocumentSiloUrl(environmentId: kGlobalEnvironmentId),
-    )
-
-    /// Deletes a user's document and cache silos. The caller must make sure
-    /// that user's managers are no longer running.
-    static func removeSilos(userId: String) {
-        let environmentId = environmentId(userId: userId)
-        try? FileManager.default.removeItem(at: siloRootUrl(for: .documentDirectory).appending(path: environmentId))
-        try? FileManager.default.removeItem(at: siloRootUrl(for: .cachesDirectory).appending(path: environmentId))
-    }
+    /// The environment with no user. Its silo is the one place that outlives
+    /// every session, so it holds what must be readable before anyone signs
+    /// in: who is signed in, the recent usernames, and the log store.
+    @MainActor static let transient = AppEnvironment(userId: nil)
 
     var isSimulator: Bool {
         app.runEnvironment == .simulator
@@ -104,7 +95,6 @@ public extension AppEnvironment {
 }
 
 private let kTransientEnvironmentId = "_transient_"
-private let kGlobalEnvironmentId = "_global_"
 
 private extension AppEnvironment {
     static func environmentId(userId: String?) -> String {

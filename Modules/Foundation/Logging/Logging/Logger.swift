@@ -87,7 +87,7 @@ public final class Logger: @unchecked Sendable {
 
     @MainActor
     private init() {
-        let env = AppEnvironment(userId: nil)
+        let env = AppEnvironment.transient
         let storeDirUrl = env.documentSiloUrl
             .appending(path: "Logging", directoryHint: .isDirectory)
         let storeUrl = storeDirUrl

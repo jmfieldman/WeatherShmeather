@@ -38,8 +38,7 @@ public final class SceneDelegator {
 
         // Until the session coordinator exists, run in the transient
         // environment: no user is signed in.
-        let appEnvironment = AppEnvironment(userId: nil)
-        InjectionManager.register(AppEnvironment.self) { appEnvironment }
+        InjectionManager.register(AppEnvironment.self) { AppEnvironment.transient }
 
         let rootTabViewController = RootTabViewControllerBuilder().build()
         self.rootTabViewController = rootTabViewController
