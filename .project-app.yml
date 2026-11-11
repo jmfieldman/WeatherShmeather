@@ -1,0 +1,37 @@
+packages:
+  Modules:
+    path: Modules
+    group: ""
+
+targets:
+  WeatherShmeather:
+    dependencies:
+      - package: Modules
+        products:
+          - SceneDelegation
+    type: application
+    sources:
+      - path: System/AppDelegate.swift
+      - path: System/SceneDelegate.swift
+      - { buildPhase: resources, path: System/AppIcon.xcassets }
+      - { buildPhase: resources, path: System/PrivacyInfo.xcprivacy }
+    platform: iOS
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: System/WeatherShmeather-Info.plist
+        CODE_SIGN_ENTITLEMENTS: System/WeatherShmeather.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: org.fieldman.weather-shmeather
+        TARGETED_DEVICE_FAMILY: "1"
+        OTHER_SWIFT_FLAGS: -Xcc -Wno-incomplete-umbrella
+    templates:
+      - PackageInclusionTemplate
+
+schemes:
+  WeatherShmeather:
+    build:
+      preActions:
+        - script: |
+            ${WORKSPACE_PATH}/../../bin/scripts/prebuild.sh
+      targets:
+        WeatherShmeather: all

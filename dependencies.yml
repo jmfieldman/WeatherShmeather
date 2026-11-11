@@ -1,0 +1,16 @@
+dependencies:
+  - url: https://github.com/jmfieldman/Inject
+    from: 0.0.4
+  - url: https://github.com/SFSafeSymbols/SFSafeSymbols
+    from: 7.0.0
+  - url: https://github.com/jmfieldman/Slate
+    from: 3.1.0
+    libraries:
+      - Slate
+      - SlateSchema
+  - url: https://github.com/jmfieldman/SwiftAsyncEx
+    from: 1.6.1
+  - url: https://github.com/jmfieldman/SwiftUIEx
+    from: 1.1.1
+  - url: https://github.com/jmfieldman/CocoaEx
+    from: 0.0.26

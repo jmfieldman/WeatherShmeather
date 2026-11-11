@@ -1,0 +1,77 @@
+{
+  "pins" : [
+    {
+      "identity" : "cocoaex",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jmfieldman/CocoaEx",
+      "state" : {
+        "revision" : "809700c94d247153a771051898399c128cf35e47",
+        "version" : "0.0.26"
+      }
+    },
+    {
+      "identity" : "inject",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jmfieldman/Inject",
+      "state" : {
+        "revision" : "725b74aba8da9371de61ac8aee494dc787175329",
+        "version" : "0.0.4"
+      }
+    },
+    {
+      "identity" : "sfsafesymbols",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SFSafeSymbols/SFSafeSymbols",
+      "state" : {
+        "revision" : "e01b3d4f861412f8dcee8d93c417d2c2b0cdfd77",
+        "version" : "7.0.0"
+      }
+    },
+    {
+      "identity" : "slate",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jmfieldman/Slate",
+      "state" : {
+        "revision" : "8ef81fbf526f2e3b2665f149053eb73805e5b75f",
+        "version" : "3.1.0"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+        "version" : "1.8.2"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-syntax.git",
+      "state" : {
+        "revision" : "2b59c0c741e9184ab057fd22950b491076d42e91",
+        "version" : "603.0.0"
+      }
+    },
+    {
+      "identity" : "swiftasyncex",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jmfieldman/SwiftAsyncEx",
+      "state" : {
+        "revision" : "7029e171b399094ed6e896fc121855c1baa902c4",
+        "version" : "1.6.1"
+      }
+    },
+    {
+      "identity" : "swiftuiex",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jmfieldman/SwiftUIEx",
+      "state" : {
+        "revision" : "d0ff08860240b6a53ac3b9dc5cee10e61d813da3",
+        "version" : "1.1.1"
+      }
+    }
+  ],
+  "version" : 2
+}

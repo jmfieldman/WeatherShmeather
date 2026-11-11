@@ -1,0 +1,51 @@
+# Xcode
+build/
+DerivedData/
+
+# Dependency Magnet local files
+.dependency_magnet
+Dependencies/Package*
+/local/Packages
+
+# Velocity-generated XcodeGen files
+.project-modules.yml
+.project-dependencies.yml
+*.xcodeproj/
+!/bin/ci/projects/*
+.cache/
+
+# Velocity sanitization files
+.sanitization/
+
+# macOS
+.DS_Store
+
+# User settings
+xcuserdata/
+
+# Obj-C/Swift specific
+*.hmap
+
+# Swap files
+*.swp
+
+# App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+.swiftpm/
+.build/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output

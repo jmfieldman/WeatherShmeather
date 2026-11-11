@@ -1,0 +1,9 @@
+{
+  "files" : [
+    "DatabaseLogEntry.swift",
+    "LogEntry+SlateBridge.swift",
+    "LoggingSlateSchema.swift"
+  ],
+  "generatorVersion" : 1,
+  "schemaFingerprint" : "diagnostic:c843b252b88934e8"
+}

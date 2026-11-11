@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# Pre-commit hook. Installed by `make bootstrap` (core.hooksPath = .githooks).
+#
+# 1. Regenerate .imports.yml files and re-stage any that changed.
+# 2. Regenerate Injection.swift and re-stage.
+# 3. Run SwiftFormat + SwiftLint on staged .swift files, re-staging fixes.
+
+set -e
+
+export PATH="$HOME/.mint/bin:/opt/homebrew/bin:$PATH"
+
+# ---- regenerate .imports.yml files -----------------------------------------
+make imports
+
+# For renamed entries `git status --porcelain` prints `R  old -> new`; strip the
+# status prefix and the `old -> ` part so we're left with just the new path.
+imports_changed=$(git status -s --porcelain '*imports.yml' \
+    | sed 's/^...//' \
+    | sed 's/^.* -> //')
+if [ -n "$imports_changed" ]; then
+    echo "$imports_changed" | tr '\n' '\0' | xargs -0 git add
+fi
+
+# ---- regenerate Injection.swift --------------------------------------------
+make injection
+git add Modules/Injection/Injection/Injection.swift 2>/dev/null || true
+
+# ---- SwiftFormat + SwiftLint on staged .swift files ------------------------
+swift_files=$(git diff --diff-filter=d --staged --name-only -z -- '*.swift' \
+    | tr '\0' '\n' \
+    | grep -v '^$' || true)
+
+if [ -z "$swift_files" ]; then
+    exit 0
+fi
+
+if ! printf '%s\n' "$swift_files" | tr '\n' '\0' | xargs -0 mint run swiftformat --quiet --config .swiftformat; then
+    echo "⚠️  Error: swiftformat failed -- commit rejected" >&2
+    exit 1
+fi
+
+printf '%s\n' "$swift_files" | tr '\n' '\0' | xargs -0 mint run swiftlint --fix --quiet || true
+
+if ! printf '%s\n' "$swift_files" | tr '\n' '\0' | xargs -0 mint run swiftlint --quiet; then
+    echo "⚠️  Error: SwiftLint failed -- commit rejected" >&2
+    exit 1
+fi
+
+printf '%s\n' "$swift_files" | tr '\n' '\0' | xargs -0 git add

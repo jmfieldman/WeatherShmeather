@@ -13,7 +13,7 @@ All weather data comes from [Open-Meteo](https://open-meteo.com/), which is free
 ## Users and sign-in
 
 - The first screen asks for a username. There is no password and no server account; the normalized username **is** the user id.
-- Usernames are trimmed and lowercased, limited to letters, digits, `-` and `_`, and 1 to 32 characters. The sign-in button is enabled only for a valid name.
+- Usernames are trimmed and lowercased, limited to letters, digits, `-` and `_`, start with a letter or digit, and are 1 to 32 characters. Names starting with `_` are reserved for the app's own silos. The sign-in button is enabled only for a valid name.
 - Below the field, the users who have signed in on this device are listed, so switching back to one is a tap.
 - Each user has entirely separate places, preferences, and cached weather. Signing in as a different user shows none of the previous user's data.
 - Signing out returns to the sign-in screen and keeps the user's data, so signing back in restores it. Swiping a user in the known-users list offers to remove them from the device, which deletes their data.
