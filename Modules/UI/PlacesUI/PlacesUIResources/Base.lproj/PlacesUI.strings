@@ -15,3 +15,8 @@
 "places_empty_title" = "No Places Yet";
 "places_empty_body" = "Search for a city below to add it to your list.";
 "places_updated" = "Updated %@";
+"places_search_current_location" = "Current Location";
+"places_location_alert_title" = "Turn On Location Services";
+"places_location_alert_body" = "To show the weather where you are, allow WeatherShmeather to use your location in Settings.";
+"places_location_alert_settings" = "Open Settings";
+"places_location_alert_cancel" = "Not Now";

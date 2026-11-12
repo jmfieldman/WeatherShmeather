@@ -4,6 +4,7 @@
 //
 
 import Common
+import DeviceLocationManager
 import ForecastManager
 import ForecastUI
 import Foundation
@@ -153,6 +154,9 @@ public final class PlacesListScreenModel: HostingScreenModel {
         isSearching: Property(mirroring: isSearching),
         searchText: Property(mirroring: searchText),
         searchState: Property(mirroring: searchState),
+        showsCurrentLocation: Property(tracking: { [placesManager] in
+            placesManager.locationAuthorization.value != .authorized
+        }),
         scrollTarget: Property(mirroring: scrollTarget),
         selectCardTask: .weak(self) { `self`, placeId in
             self.openPager(at: placeId, animated: true)
@@ -177,6 +181,9 @@ public final class PlacesListScreenModel: HostingScreenModel {
         },
         addTask: .weak(self) { `self`, result in
             await self.add(result)
+        },
+        currentLocationTask: .weak(self) { `self` in
+            self.useCurrentLocation()
         },
         scrolledToTargetTask: .weak(self) { `self` in
             self.scrollTarget.value = nil
@@ -204,6 +211,13 @@ public final class PlacesListScreenModel: HostingScreenModel {
     /// The pager opens by itself once, when the list first loads.
     private var hasOpenedInitialPage = false
 
+    /// Set while the system permission prompt from the Current Location row
+    /// is up, so the answer can close search.
+    private var isAwaitingAuthorization = false
+    /// Set once permission is granted from search, until the current
+    /// location's card exists to scroll to.
+    private var scrollsToCurrentLocation = false
+
     public init() {
         // Cards combine three sources: the places, their forecasts, and the
         // units to show them in. A change to any one rebuilds the cards.
@@ -221,6 +235,13 @@ public final class PlacesListScreenModel: HostingScreenModel {
             if !canEdit {
                 isEditing.value = false
             }
+            scrollToCurrentLocationIfReady()
+        }
+
+        Task.observe(bindTo: self) { [placesManager] in
+            placesManager.locationAuthorization.value
+        } perform: { [weak self] authorization in
+            self?.authorizationChanged(authorization)
         }
 
         Task.observe(bindTo: self) { [placesManager] in
@@ -239,7 +260,8 @@ public final class PlacesListScreenModel: HostingScreenModel {
     }
 
     func screenDidAppear() {
-        placesManager.requestLocationAuthorizationIfNeeded()
+        // Location permission isn't asked for here: the user opts in from
+        // the Current Location row in search.
         forecastManager.refreshAllIfStale()
     }
 
@@ -381,6 +403,66 @@ public final class PlacesListScreenModel: HostingScreenModel {
 
         let saved = placesManager.savedGeocodingIds.value
         searchState.value = .results(latestResults.map { SearchRow(result: $0, isSaved: saved.contains($0.id)) })
+    }
+
+    // MARK: Current location
+
+    /// The Current Location row asks for permission the first time. Once
+    /// the user has said no, only Settings can change that, so it offers to
+    /// open them.
+    private func useCurrentLocation() {
+        switch placesManager.locationAuthorization.value {
+        case .notDetermined:
+            isAwaitingAuthorization = true
+            placesManager.requestLocationAuthorizationIfNeeded()
+
+        case .denied:
+            presentLocationSettingsAlert()
+
+        case .authorized:
+            endSearch()
+        }
+    }
+
+    /// Granting permission from search closes it, and the list scrolls to
+    /// the current location once its card arrives. Declining leaves search open.
+    private func authorizationChanged(_ authorization: LocationAuthorization) {
+        guard isAwaitingAuthorization, authorization != .notDetermined else {
+            return
+        }
+
+        isAwaitingAuthorization = false
+        if authorization == .authorized {
+            endSearch()
+            scrollsToCurrentLocation = true
+            scrollToCurrentLocationIfReady()
+        }
+    }
+
+    private func scrollToCurrentLocationIfReady() {
+        guard scrollsToCurrentLocation, let first = cards.value.first, first.isCurrentLocation else {
+            return
+        }
+
+        scrollsToCurrentLocation = false
+        scrollTarget.value = first.id
+    }
+
+    private func presentLocationSettingsAlert() {
+        let alert = UIAlertController(
+            title: String.PlacesUI.placesLocationAlertTitle,
+            message: String.PlacesUI.placesLocationAlertBody,
+            preferredStyle: .alert,
+        )
+        alert.addAction(UIAlertAction(title: String.PlacesUI.placesLocationAlertCancel, style: .cancel))
+        let settings = UIAlertAction(title: String.PlacesUI.placesLocationAlertSettings, style: .default) { _ in
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        }
+        alert.addAction(settings)
+        alert.preferredAction = settings
+        viewController?.present(alert, animated: true)
     }
 
     // MARK: Editing

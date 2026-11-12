@@ -115,6 +115,9 @@ public final class PlacesListViewModel {
     public let isSearching: Property<Bool>
     public let searchText: Property<String>
     public let searchState: Property<SearchState>
+    /// Whether search leads with a Current Location row, which is offered
+    /// while the app can't use the device's location.
+    public let showsCurrentLocation: Property<Bool>
     /// A card to scroll into view once it appears, such as one just added.
     public let scrollTarget: Property<String?>
 
@@ -126,6 +129,7 @@ public final class PlacesListViewModel {
     public let endSearchTask: SerialTask<Void, Void>
     public let searchTextTask: SerialTask<String, Void>
     public let addTask: SerialTask<PlaceSearchResult, Void>
+    public let currentLocationTask: SerialTask<Void, Void>
     public let scrolledToTargetTask: SerialTask<Void, Void>
 
     public init(
@@ -135,6 +139,7 @@ public final class PlacesListViewModel {
         isSearching: Property<Bool> = .constant(false),
         searchText: Property<String> = .constant(""),
         searchState: Property<SearchState> = .constant(.idle),
+        showsCurrentLocation: Property<Bool> = .constant(false),
         scrollTarget: Property<String?> = .constant(nil),
         selectCardTask: SerialTask<String, Void> = SerialTask { _ in },
         refreshTask: SerialTask<Void, Void> = SerialTask {},
@@ -144,6 +149,7 @@ public final class PlacesListViewModel {
         endSearchTask: SerialTask<Void, Void> = SerialTask {},
         searchTextTask: SerialTask<String, Void> = SerialTask { _ in },
         addTask: SerialTask<PlaceSearchResult, Void> = SerialTask { _ in },
+        currentLocationTask: SerialTask<Void, Void> = SerialTask {},
         scrolledToTargetTask: SerialTask<Void, Void> = SerialTask {},
     ) {
         self.cards = cards
@@ -152,6 +158,7 @@ public final class PlacesListViewModel {
         self.isSearching = isSearching
         self.searchText = searchText
         self.searchState = searchState
+        self.showsCurrentLocation = showsCurrentLocation
         self.scrollTarget = scrollTarget
         self.selectCardTask = selectCardTask
         self.refreshTask = refreshTask
@@ -161,6 +168,7 @@ public final class PlacesListViewModel {
         self.endSearchTask = endSearchTask
         self.searchTextTask = searchTextTask
         self.addTask = addTask
+        self.currentLocationTask = currentLocationTask
         self.scrolledToTargetTask = scrolledToTargetTask
     }
 }

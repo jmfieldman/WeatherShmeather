@@ -29,7 +29,7 @@ A user's places are one list, stored in one Slate table:
 - **Current location.** At most one row has `isCurrentLocation = true`. It always sorts first, can't be deleted or reordered, and is hidden entirely while location permission isn't granted. When the device's location changes meaningfully (more than about a kilometer), the places manager overwrites that row's coordinates and name, and its forecast is refetched. Its name comes from reverse geocoding on device through MapKit, because Open-Meteo has no reverse geocoding.
 - **Saved places.** Rows the user added through search, in the user's own order.
 
-Location permission is "When In Use", asked the first time the weather experience appears. Denying it simply means no current-location row.
+Location permission is "When In Use", and the app never asks for it on its own. While the app can't use the device's location (not asked yet, denied, or restricted), the user opts in from search: see "Current Location in search" under the Places list. Granting it adds the current-location row, which also becomes the pager's first page; denying it simply means no current-location row.
 
 **Demonstrates:** a Slate table with a flag column the manager treats specially; a manager driven by a CoreLocation stream; cross-manager reaction (the forecast manager observing the places list).
 
@@ -79,6 +79,13 @@ The trailing toolbar button opens a **menu**:
 **Edit mode.** Edit List switches the list into edit mode: saved places get delete and reorder controls, and the current-location card stays fixed and uneditable at the top. Every delete and move is saved immediately. The toolbar button becomes a checkmark, which only leaves edit mode.
 
 **Search.** Tapping the search field enters search mode, which replaces the list with results and shows a close button beside the field. Typing searches Open-Meteo's geocoding API after a short pause; each result shows its name, then region and country in a secondary color. Tapping a result adds it to the end of the list, closes search, and scrolls the list so the new card is visible. A result that is already saved is marked and can't be added twice. The close button leaves search without adding anything.
+
+**Current Location in search.** While the app can't use the device's location, search always leads with a Current Location row, above whatever else search shows: before anything is typed, above results, and above the no-results or error message. It isn't filtered by the query. Tapping it:
+
+- If permission hasn't been asked yet, shows the system prompt. Allowing closes search; the current-location card appears at the top once the first position is named, and the list scrolls to it. Declining leaves search open.
+- If permission was denied or is restricted, shows an alert asking the user to turn on location services. Open Settings opens the app's page in Settings; Not Now dismisses the alert and does nothing else. Turning location on in Settings and returning adds the current-location row by itself.
+
+While location is available the row isn't shown, even before the first position arrives.
 
 **Empty state.** With no places at all, the list shows a centered hero: an icon, a short headline, and a line asking the user to search for a place to add. It does not start search on its own; the user taps the search field.
 

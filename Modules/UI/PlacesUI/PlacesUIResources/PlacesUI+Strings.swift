@@ -19,6 +19,18 @@ public extension String {
         /// "No Places Yet"
         public static let placesEmptyTitle: String = .init(localized: "places_empty_title", defaultValue: "No Places Yet", table: "PlacesUI", bundle: .PlacesUIResources)
 
+        /// "To show the weather where you are, allow WeatherShmeather to use your location in Settings."
+        public static let placesLocationAlertBody: String = .init(localized: "places_location_alert_body", defaultValue: "To show the weather where you are, allow WeatherShmeather to use your location in Settings.", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Not Now"
+        public static let placesLocationAlertCancel: String = .init(localized: "places_location_alert_cancel", defaultValue: "Not Now", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Open Settings"
+        public static let placesLocationAlertSettings: String = .init(localized: "places_location_alert_settings", defaultValue: "Open Settings", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Turn On Location Services"
+        public static let placesLocationAlertTitle: String = .init(localized: "places_location_alert_title", defaultValue: "Turn On Location Services", table: "PlacesUI", bundle: .PlacesUIResources)
+
         /// "Celsius"
         public static let placesMenuCelsius: String = .init(localized: "places_menu_celsius", defaultValue: "Celsius", table: "PlacesUI", bundle: .PlacesUIResources)
 
@@ -45,6 +57,9 @@ public extension String {
 
         /// "Close Search"
         public static let placesSearchClose: String = .init(localized: "places_search_close", defaultValue: "Close Search", table: "PlacesUI", bundle: .PlacesUIResources)
+
+        /// "Current Location"
+        public static let placesSearchCurrentLocation: String = .init(localized: "places_search_current_location", defaultValue: "Current Location", table: "PlacesUI", bundle: .PlacesUIResources)
 
         /// "No places match “%@”."
         public static func placesSearchNoResults(_ arg0: String) -> String {

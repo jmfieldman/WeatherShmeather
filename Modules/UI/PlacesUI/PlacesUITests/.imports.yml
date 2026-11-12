@@ -1,0 +1,12 @@
+- DeviceLocationManager
+- ForecastManager
+- ForecastManagerTestHelpers
+- Inject
+- PlacesManager
+- PlacesManagerTestHelpers
+- PlacesUIImpl
+- PreferencesManager
+- PreferencesManagerTestHelpers
+- SessionManager
+- SessionManagerTestHelpers
+- Testing

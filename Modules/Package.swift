@@ -550,6 +550,7 @@ let package = Package(
             dependencies: [
                 "Common",
                 "DesignSystem",
+                "DeviceLocationManager",
                 "ForecastManager",
                 "ForecastUI",
                 "Logging",
@@ -585,6 +586,26 @@ let package = Package(
             dependencies: [
             ],
             path: "UI/PlacesUI/PlacesUIResources",
+            exclude: [
+            ],
+            swiftSettings: [.treatAllWarnings(as: .error)],
+        ),
+        .testTarget(
+            name: "PlacesUITests",
+            dependencies: [
+                "DeviceLocationManager",
+                "ForecastManager",
+                "ForecastManagerTestHelpers",
+                "PlacesManager",
+                "PlacesManagerTestHelpers",
+                "PlacesUIImpl",
+                "PreferencesManager",
+                "PreferencesManagerTestHelpers",
+                "SessionManager",
+                "SessionManagerTestHelpers",
+                .product(name: "Inject", package: "Inject"),
+            ],
+            path: "UI/PlacesUI/PlacesUITests",
             exclude: [
             ],
             swiftSettings: [.treatAllWarnings(as: .error)],

@@ -239,37 +239,74 @@ struct SearchResultsView: View {
     let viewModel: PlacesListViewModel
 
     var body: some View {
-        switch viewModel.searchState.value {
-        case .idle:
-            Color.clear
-
-        case .loading:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-        case let .noResults(query):
-            message(String.PlacesUI.placesSearchNoResults(query))
-
-        case let .failed(text):
-            message(text)
-
-        case let .results(rows):
-            List(rows) { row in
-                SearchRowView(row: row, task: viewModel.addTask)
+        List {
+            // Offered above every search state, even before anything is typed.
+            if viewModel.showsCurrentLocation.value {
+                CurrentLocationRowView(task: viewModel.currentLocationTask)
                     .listRowBackground(Color.clear)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .scrollDismissesKeyboard(.immediately)
+
+            switch viewModel.searchState.value {
+            case .idle:
+                EmptyView()
+
+            case .loading:
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, .xl)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
+            case let .noResults(query):
+                message(String.PlacesUI.placesSearchNoResults(query))
+
+            case let .failed(text):
+                message(text)
+
+            case let .results(rows):
+                ForEach(rows) { row in
+                    SearchRowView(row: row, task: viewModel.addTask)
+                        .listRowBackground(Color.clear)
+                }
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
     }
 
     private func message(_ text: String) -> some View {
         Text(text)
             .textStyle(.callout, color: DesignTokens.secondaryText)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, .gutter)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .padding(.top, .xl)
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+}
+
+/// The first search row while location isn't available: tapping it asks
+/// for permission, or offers Settings once it has been denied.
+struct CurrentLocationRowView: View {
+    let task: SerialTask<Void, Void>
+
+    var body: some View {
+        Button {
+            task.fire()
+        } label: {
+            HStack(spacing: .s) {
+                Image(systemSymbol: .locationFill)
+                    .foregroundStyle(DesignTokens.accent)
+                    .accessibilityHidden(true)
+                Text(String.PlacesUI.placesSearchCurrentLocation)
+                    .textStyle(.body)
+                Spacer(minLength: 0)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .disabled(task.isExecuting)
     }
 }
 
@@ -326,6 +363,10 @@ private extension PlacesListViewModel {
         PlacesListViewModel(cards: .constant(cards), showsEmptyState: .constant(cards.isEmpty))
     }
 
+    static var previewSearch: PlacesListViewModel {
+        PlacesListViewModel(isSearching: .constant(true), searchText: .constant("Bos"), showsCurrentLocation: .constant(true))
+    }
+
     static let previewCards = [
         PlaceCard(id: "here", name: "Tarzana", isCurrentLocation: true, timeZone: nil),
         PlaceCard(id: "a", name: "Palm Desert", isCurrentLocation: false, timeZone: TimeZone(identifier: "America/Los_Angeles")),
@@ -341,6 +382,10 @@ private extension PlacesListViewModel {
 #Preview("Dark") {
     PlacesListView(viewModel: .preview(cards: PlacesListViewModel.previewCards))
         .preferredColorScheme(.dark)
+}
+
+#Preview("Search") {
+    PlacesListView(viewModel: .previewSearch)
 }
 
 #Preview("Empty") {
