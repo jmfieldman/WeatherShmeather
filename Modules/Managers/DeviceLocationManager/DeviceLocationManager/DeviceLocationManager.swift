@@ -44,10 +44,10 @@ public struct Coordinate: Hashable, Sendable, Codable {
 /// names a coordinate on request.
 @MainActor
 public protocol DeviceLocationManager: AnyObject, Sendable {
-    var authorization: any PropertyProtocol<LocationAuthorization> { get }
+    var authorization: Property<LocationAuthorization> { get }
 
     /// The latest position while authorized, or `nil`.
-    var location: any PropertyProtocol<Coordinate?> { get }
+    var location: Property<Coordinate?> { get }
 
     /// Shows the system prompt if the user hasn't been asked. Otherwise does nothing.
     func requestAuthorizationIfNeeded()

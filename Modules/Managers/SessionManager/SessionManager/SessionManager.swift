@@ -15,10 +15,10 @@ import SwiftAsyncEx
 @MainActor
 public protocol SessionManager: AnyObject, Sendable {
     /// The signed-in user, or `nil` when no one is.
-    var currentUsername: any PropertyProtocol<Username?> { get }
+    var currentUsername: Property<Username?> { get }
 
     /// The last five usernames that signed in on this device, most recent first.
-    var recentUsernames: any PropertyProtocol<[Username]> { get }
+    var recentUsernames: Property<[Username]> { get }
 
     func signIn(as username: Username)
 

@@ -16,9 +16,9 @@ public final class MockForecastManager: ForecastManager {
     public private(set) var refreshAllIfStaleCount = 0
     public private(set) var refreshAllCount = 0
 
-    public private(set) lazy var forecasts: any PropertyProtocol<[String: Forecast]> = Property(mirroring: mutableForecasts)
-    public private(set) lazy var refreshingPlaceIds: any PropertyProtocol<Set<String>> = Property(mirroring: mutableRefreshingPlaceIds)
-    public private(set) lazy var refreshErrors: any PropertyProtocol<[String: ForecastError]> = Property(mirroring: mutableRefreshErrors)
+    public private(set) lazy var forecasts = Property(mirroring: mutableForecasts)
+    public private(set) lazy var refreshingPlaceIds = Property(mirroring: mutableRefreshingPlaceIds)
+    public private(set) lazy var refreshErrors = Property(mirroring: mutableRefreshErrors)
 
     public init(forecasts: [String: Forecast] = [:]) {
         self.mutableForecasts = MutableProperty(forecasts)

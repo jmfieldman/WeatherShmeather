@@ -12,14 +12,14 @@ import SwiftAsyncEx
 @MainActor
 public protocol PlacesManager: AnyObject, Sendable {
     /// Every place, current location first. Republished after every write.
-    var places: any PropertyProtocol<[Place]> { get }
+    var places: Property<[Place]> { get }
 
     /// False until the list has been read from disk once, so a screen can
     /// tell "no places" from "not loaded yet".
-    var hasLoaded: any PropertyProtocol<Bool> { get }
+    var hasLoaded: Property<Bool> { get }
 
     /// Whether the current location can be shown.
-    var locationAuthorization: any PropertyProtocol<LocationAuthorization> { get }
+    var locationAuthorization: Property<LocationAuthorization> { get }
 
     /// Asks for location permission if the user hasn't been asked.
     func requestLocationAuthorizationIfNeeded()
@@ -28,7 +28,7 @@ public protocol PlacesManager: AnyObject, Sendable {
     func search(_ query: String) async throws(PlacesError) -> [PlaceSearchResult]
 
     /// The geocoding ids already in the list, to mark saved search results.
-    var savedGeocodingIds: any PropertyProtocol<Set<Int64>> { get }
+    var savedGeocodingIds: Property<Set<Int64>> { get }
 
     /// Adds a search result to the end of the list and returns the new place.
     @discardableResult

@@ -23,11 +23,11 @@ public final class MockPlacesManager: PlacesManager {
     public private(set) var deleted: [String] = []
     public private(set) var authorizationRequests = 0
 
-    public private(set) lazy var places: any PropertyProtocol<[Place]> = Property(mirroring: mutablePlaces)
-    public private(set) lazy var hasLoaded: any PropertyProtocol<Bool> = Property(mirroring: mutableHasLoaded)
-    public private(set) lazy var locationAuthorization: any PropertyProtocol<LocationAuthorization> =
+    public private(set) lazy var places = Property(mirroring: mutablePlaces)
+    public private(set) lazy var hasLoaded = Property(mirroring: mutableHasLoaded)
+    public private(set) lazy var locationAuthorization =
         Property(mirroring: mutableLocationAuthorization)
-    public private(set) lazy var savedGeocodingIds: any PropertyProtocol<Set<Int64>> = Property(mirroring: mutableSavedGeocodingIds)
+    public private(set) lazy var savedGeocodingIds = Property(mirroring: mutableSavedGeocodingIds)
 
     public init(places: [Place] = []) {
         self.mutablePlaces = MutableProperty(places)

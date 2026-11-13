@@ -18,11 +18,11 @@ public final class DeviceLocationManagerImpl: NSObject, DeviceLocationManager {
     private let locationManager = CLLocationManager()
 
     private let mutableAuthorization = MutableProperty(LocationAuthorization.notDetermined)
-    public private(set) lazy var authorization: any PropertyProtocol<LocationAuthorization> =
+    public private(set) lazy var authorization =
         Property(mirroring: mutableAuthorization)
 
     private let mutableLocation = MutableProperty<Coordinate?>(nil)
-    public private(set) lazy var location: any PropertyProtocol<Coordinate?> = Property(mirroring: mutableLocation)
+    public private(set) lazy var location = Property(mirroring: mutableLocation)
 
     /// The live-updates loop, running only while authorized. The bag is
     /// associated with this manager, so the loop ends with the session.

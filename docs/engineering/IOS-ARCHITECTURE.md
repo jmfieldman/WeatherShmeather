@@ -172,7 +172,7 @@ The central abstraction. A manager is a `@MainActor` protocol in its API module 
 ```swift
 @MainActor
 public protocol ForecastManager: AnyObject, Sendable {
-    func forecast(for placeId: Place.ID) -> any PropertyProtocol<LoadableResult<Forecast, ForecastError>>
+    var forecasts: Property<[Place.ID: Forecast]> { get }
     var refreshAll: SerialTask<Void, Void> { get }
 }
 
@@ -196,7 +196,7 @@ public final class ForecastManagerImpl: ForecastManager {
 
 Rules:
 
-- **Reactive state is `MutableProperty` inside, `Property` outside.** Vend `any PropertyProtocol<T>` get-only members. The class itself is not `@Observable`.
+- **Reactive state is `MutableProperty` inside, `Property` outside.** The protocol declares get-only `Property<T>` members, and the Impl vends them as `lazy var forecasts = Property(mirroring: mutableForecasts)`, letting the type be inferred. Spell the type out only where inference fails, such as a `Property(tracking:)` closure that returns an implicit member like `.celsius`. `Property` is a concrete class, so there is no reason to vend the existential `any PropertyProtocol<T>`. The class itself is not `@Observable`.
 - **Derived state is `Property(tracking:)`** reading other properties inside the closure. On iOS 26 it recomputes on a later main-actor turn, not inside the write that changed its inputs, so a test waits briefly before reading it. `Property(mirroring:)` is the same mechanism and has the same delay. Side effects on change use `Task.observe(of:perform:)`. Never inline `withObservationTracking`.
 - **Long-lived tasks bind to the owner** with `Task.bound(to: self)` or `.bind(to: self)`, so they cancel when the manager is torn down at a user switch. No hand-rolled task arrays.
 - **Repeatable async entry points are `SerialTask`s** (`refresh`, `search`). One in flight at a time: a call made while one is running is dropped (`run()` throws `AlreadyExecuting`, `fire()` swallows it), so a `SerialTask` suits "do this once now", not a queue. UI components bind to them directly, and `isExecuting` drives spinners and disabled states.
@@ -333,7 +333,7 @@ The rules that make the loop hold:
 - **Send a batch as one call.** A task drops calls made while it runs, so a gesture that reports several items at once (List's `onDelete` offsets, `onMove`) fires once with all of them, and the screen model loops. Translating view positions into domain ids, such as skipping the fixed current-location card, belongs in the screen model, not the view.
 - **Acknowledgments are tasks too.** When the view consumes a one-shot value, such as scrolling to a just-added card, it fires a task (`scrolledToTargetTask`) and the screen model clears the property. The view never resets state by writing it.
 - **Derived values are Properties, computed in the screen model** with `Property(tracking:)` over its `MutableProperty`s, as the list's `showsEmptyState` and sign-in's `submittableUsername` and `showsValidationHint` are. A value the ViewModel would otherwise compute in a getter is computed here instead.
-- **Pass a manager's property straight through** when the screen adds nothing to it (the Units sheet mirrors `PreferencesManager.unitSettings`). Copy it into the screen model's own `MutableProperty` only when the screen reshapes it, as the list does when it combines places, forecasts, and units into cards.
+- **Pass a manager's property straight through** when the screen adds nothing to it: the Units sheet hands `PreferencesManager.unitSettings` to its ViewModel as is. A manager already vends a read-only `Property`, so wrapping it in `Property(mirroring:)` would only add a second copy and another turn of delay. Mirror only a `MutableProperty` or `PersistentProperty`, to make the read-only handle. Copy it into the screen model's own `MutableProperty` only when the screen reshapes it, as the list does when it combines places, forecasts, and units into cards.
 - **Values reach the view a main-actor turn later.** On iOS 26 a mirrored property updates after the write that caused it, so the view sees a task's effect one turn after the task runs. Text input still keeps up with fast typing, but a screen model test waits briefly for the mirrored value before asserting.
 - **Types inside a Property are `Sendable`.** A state enum nested in a `@MainActor` ViewModel is main-actor isolated and not `Sendable` by default, so it declares the conformance (`enum State: Equatable, Sendable`). `Equatable` matters too: a property only publishes a value that differs from the last one.
 - **The view may keep presentation-only state** that nothing else reads, such as `@FocusState` for the search field or a collapsed section, always with a default value. If the screen model needs to know about it, the view reports it with a task (focusing the search field fires `beginSearchTask`).

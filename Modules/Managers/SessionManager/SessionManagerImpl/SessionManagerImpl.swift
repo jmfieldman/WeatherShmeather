@@ -14,10 +14,10 @@ private let kMaxRecentUsernames = 5
 public final class SessionManagerImpl: SessionManager {
     private let store: SessionStore
 
-    public private(set) lazy var currentUsername: any PropertyProtocol<Username?> =
+    public private(set) lazy var currentUsername =
         Property(mirroring: store.currentUsername)
 
-    public private(set) lazy var recentUsernames: any PropertyProtocol<[Username]> =
+    public private(set) lazy var recentUsernames =
         Property(mirroring: store.recentUsernames)
 
     public init(store: SessionStore = .shared) {

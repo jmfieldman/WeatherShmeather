@@ -14,8 +14,8 @@ public final class MockSessionManager: SessionManager {
     public private(set) var signInCalls: [Username] = []
     public private(set) var logOutCount = 0
 
-    public private(set) lazy var currentUsername: any PropertyProtocol<Username?> = Property(mirroring: mutableCurrentUsername)
-    public private(set) lazy var recentUsernames: any PropertyProtocol<[Username]> = Property(mirroring: mutableRecentUsernames)
+    public private(set) lazy var currentUsername = Property(mirroring: mutableCurrentUsername)
+    public private(set) lazy var recentUsernames = Property(mirroring: mutableRecentUsernames)
 
     public init(currentUsername: Username? = nil, recentUsernames: [Username] = []) {
         self.mutableCurrentUsername = MutableProperty(currentUsername)

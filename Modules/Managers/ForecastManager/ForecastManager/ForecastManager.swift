@@ -15,13 +15,13 @@ import SwiftAsyncEx
 public protocol ForecastManager: AnyObject, Sendable {
     /// The latest forecast for each place, by place id. Cached forecasts are
     /// here from launch, before any refresh.
-    var forecasts: any PropertyProtocol<[String: Forecast]> { get }
+    var forecasts: Property<[String: Forecast]> { get }
 
     /// Places with a fetch in flight.
-    var refreshingPlaceIds: any PropertyProtocol<Set<String>> { get }
+    var refreshingPlaceIds: Property<Set<String>> { get }
 
     /// The last refresh failure for each place, cleared by its next success.
-    var refreshErrors: any PropertyProtocol<[String: ForecastError]> { get }
+    var refreshErrors: Property<[String: ForecastError]> { get }
 
     /// Fetches a place's weather if it's missing or older than 15 minutes.
     func refreshIfStale(placeId: String)

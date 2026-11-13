@@ -15,8 +15,8 @@ public final class MockDeviceLocationManager: DeviceLocationManager {
     public var defaultPlaceName: String?
     public private(set) var authorizationRequests = 0
 
-    public private(set) lazy var authorization: any PropertyProtocol<LocationAuthorization> = Property(mirroring: mutableAuthorization)
-    public private(set) lazy var location: any PropertyProtocol<Coordinate?> = Property(mirroring: mutableLocation)
+    public private(set) lazy var authorization = Property(mirroring: mutableAuthorization)
+    public private(set) lazy var location = Property(mirroring: mutableLocation)
 
     public init(authorization: LocationAuthorization = .notDetermined, location: Coordinate? = nil) {
         self.mutableAuthorization = MutableProperty(authorization)

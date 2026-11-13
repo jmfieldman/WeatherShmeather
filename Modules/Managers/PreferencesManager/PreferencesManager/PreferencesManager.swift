@@ -12,20 +12,20 @@ import SwiftAsyncEx
 /// shown, so changing one never refetches anything.
 @MainActor
 public protocol PreferencesManager: AnyObject, Sendable {
-    var temperatureUnit: any PropertyProtocol<TemperatureUnitPreference> { get }
-    var windSpeedUnit: any PropertyProtocol<WindSpeedUnit> { get }
-    var precipitationUnit: any PropertyProtocol<PrecipitationUnit> { get }
-    var pressureUnit: any PropertyProtocol<PressureUnit> { get }
-    var distanceUnit: any PropertyProtocol<DistanceUnit> { get }
-    var timeFormat: any PropertyProtocol<TimeFormat> { get }
-    var airQualityScale: any PropertyProtocol<AirQualityScale> { get }
+    var temperatureUnit: Property<TemperatureUnitPreference> { get }
+    var windSpeedUnit: Property<WindSpeedUnit> { get }
+    var precipitationUnit: Property<PrecipitationUnit> { get }
+    var pressureUnit: Property<PressureUnit> { get }
+    var distanceUnit: Property<DistanceUnit> { get }
+    var timeFormat: Property<TimeFormat> { get }
+    var airQualityScale: Property<AirQualityScale> { get }
 
     /// The temperature setting with "system" resolved for the device's region.
-    var resolvedTemperatureUnit: any PropertyProtocol<TemperatureUnit> { get }
+    var resolvedTemperatureUnit: Property<TemperatureUnit> { get }
 
     /// Every setting, resolved, derived from the ones above. Screens format
     /// with this, and update whenever any setting changes.
-    var unitSettings: any PropertyProtocol<UnitSettings> { get }
+    var unitSettings: Property<UnitSettings> { get }
 
     func setTemperatureUnit(_ unit: TemperatureUnitPreference)
     func setWindSpeedUnit(_ unit: WindSpeedUnit)

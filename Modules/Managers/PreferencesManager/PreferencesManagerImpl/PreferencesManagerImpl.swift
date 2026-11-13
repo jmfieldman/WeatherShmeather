@@ -24,23 +24,23 @@ public final class PreferencesManagerImpl: PreferencesManager {
     private let storedTimeFormat: PersistentProperty<TimeFormat>
     private let storedAirQualityScale: PersistentProperty<AirQualityScale>
 
-    public private(set) lazy var temperatureUnit: any PropertyProtocol<TemperatureUnitPreference> =
+    public private(set) lazy var temperatureUnit =
         Property(mirroring: storedTemperatureUnit)
-    public private(set) lazy var windSpeedUnit: any PropertyProtocol<WindSpeedUnit> = Property(mirroring: storedWindSpeedUnit)
-    public private(set) lazy var precipitationUnit: any PropertyProtocol<PrecipitationUnit> =
+    public private(set) lazy var windSpeedUnit = Property(mirroring: storedWindSpeedUnit)
+    public private(set) lazy var precipitationUnit =
         Property(mirroring: storedPrecipitationUnit)
-    public private(set) lazy var pressureUnit: any PropertyProtocol<PressureUnit> = Property(mirroring: storedPressureUnit)
-    public private(set) lazy var distanceUnit: any PropertyProtocol<DistanceUnit> = Property(mirroring: storedDistanceUnit)
-    public private(set) lazy var timeFormat: any PropertyProtocol<TimeFormat> = Property(mirroring: storedTimeFormat)
-    public private(set) lazy var airQualityScale: any PropertyProtocol<AirQualityScale> =
+    public private(set) lazy var pressureUnit = Property(mirroring: storedPressureUnit)
+    public private(set) lazy var distanceUnit = Property(mirroring: storedDistanceUnit)
+    public private(set) lazy var timeFormat = Property(mirroring: storedTimeFormat)
+    public private(set) lazy var airQualityScale =
         Property(mirroring: storedAirQualityScale)
 
-    public private(set) lazy var resolvedTemperatureUnit: any PropertyProtocol<TemperatureUnit> =
+    public private(set) lazy var resolvedTemperatureUnit =
         Property(tracking: { [storedTemperatureUnit, measurementSystem] in
             Self.resolve(storedTemperatureUnit.value, measurementSystem: measurementSystem)
         })
 
-    public private(set) lazy var unitSettings: any PropertyProtocol<UnitSettings> =
+    public private(set) lazy var unitSettings =
         Property(tracking: { [weak self] in
             self?.currentUnitSettings ?? UnitSettings(defaults: RegionDefaults(measurementSystem: .metric))
         })

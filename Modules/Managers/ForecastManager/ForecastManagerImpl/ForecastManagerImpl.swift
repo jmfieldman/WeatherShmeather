@@ -34,14 +34,14 @@ public final class ForecastManagerImpl: ForecastManager {
     private let now: @Sendable () -> Date
 
     private let mutableForecasts = MutableProperty<[String: Forecast]>([:])
-    public private(set) lazy var forecasts: any PropertyProtocol<[String: Forecast]> = Property(mirroring: mutableForecasts)
+    public private(set) lazy var forecasts = Property(mirroring: mutableForecasts)
 
     private let mutableRefreshingPlaceIds = MutableProperty<Set<String>>([])
-    public private(set) lazy var refreshingPlaceIds: any PropertyProtocol<Set<String>> =
+    public private(set) lazy var refreshingPlaceIds =
         Property(mirroring: mutableRefreshingPlaceIds)
 
     private let mutableRefreshErrors = MutableProperty<[String: ForecastError]>([:])
-    public private(set) lazy var refreshErrors: any PropertyProtocol<[String: ForecastError]> =
+    public private(set) lazy var refreshErrors =
         Property(mirroring: mutableRefreshErrors)
 
     /// One fetch per place at a time; a second request joins the first.

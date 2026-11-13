@@ -40,17 +40,18 @@ public final class PlacesManagerImpl: PlacesManager {
     private let stream: SlateStream<StoredPlace>
 
     private let mutablePlaces = MutableProperty<[Place]>([])
-    public private(set) lazy var places: any PropertyProtocol<[Place]> = Property(mirroring: mutablePlaces)
+    public private(set) lazy var places = Property(mirroring: mutablePlaces)
 
     private let mutableHasLoaded = MutableProperty(false)
-    public private(set) lazy var hasLoaded: any PropertyProtocol<Bool> = Property(mirroring: mutableHasLoaded)
+    public private(set) lazy var hasLoaded = Property(mirroring: mutableHasLoaded)
 
     private let mutableSavedGeocodingIds = MutableProperty<Set<Int64>>([])
-    public private(set) lazy var savedGeocodingIds: any PropertyProtocol<Set<Int64>> =
+    public private(set) lazy var savedGeocodingIds =
         Property(mirroring: mutableSavedGeocodingIds)
 
-    public private(set) lazy var locationAuthorization: any PropertyProtocol<LocationAuthorization> =
-        Property(mirroring: deviceLocationManager.authorization)
+    public var locationAuthorization: Property<LocationAuthorization> {
+        deviceLocationManager.authorization
+    }
 
     public init() {
         self.slate = slateManager.provide(for: PlacesSlateSchema.self)

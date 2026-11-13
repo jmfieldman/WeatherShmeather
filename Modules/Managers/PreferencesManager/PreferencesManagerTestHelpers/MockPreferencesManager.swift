@@ -18,19 +18,19 @@ public final class MockPreferencesManager: PreferencesManager {
     public let mutableAirQualityScale = MutableProperty(AirQualityScale.european)
     public private(set) var restoreDefaultsCount = 0
 
-    public private(set) lazy var temperatureUnit: any PropertyProtocol<TemperatureUnitPreference> = Property(mirroring: mutableTemperatureUnit)
-    public private(set) lazy var windSpeedUnit: any PropertyProtocol<WindSpeedUnit> = Property(mirroring: mutableWindSpeedUnit)
-    public private(set) lazy var precipitationUnit: any PropertyProtocol<PrecipitationUnit> = Property(mirroring: mutablePrecipitationUnit)
-    public private(set) lazy var pressureUnit: any PropertyProtocol<PressureUnit> = Property(mirroring: mutablePressureUnit)
-    public private(set) lazy var distanceUnit: any PropertyProtocol<DistanceUnit> = Property(mirroring: mutableDistanceUnit)
-    public private(set) lazy var timeFormat: any PropertyProtocol<TimeFormat> = Property(mirroring: mutableTimeFormat)
-    public private(set) lazy var airQualityScale: any PropertyProtocol<AirQualityScale> = Property(mirroring: mutableAirQualityScale)
+    public private(set) lazy var temperatureUnit = Property(mirroring: mutableTemperatureUnit)
+    public private(set) lazy var windSpeedUnit = Property(mirroring: mutableWindSpeedUnit)
+    public private(set) lazy var precipitationUnit = Property(mirroring: mutablePrecipitationUnit)
+    public private(set) lazy var pressureUnit = Property(mirroring: mutablePressureUnit)
+    public private(set) lazy var distanceUnit = Property(mirroring: mutableDistanceUnit)
+    public private(set) lazy var timeFormat = Property(mirroring: mutableTimeFormat)
+    public private(set) lazy var airQualityScale = Property(mirroring: mutableAirQualityScale)
 
-    public private(set) lazy var resolvedTemperatureUnit: any PropertyProtocol<TemperatureUnit> = Property(tracking: { [mutableTemperatureUnit] in
+    public private(set) lazy var resolvedTemperatureUnit: Property<TemperatureUnit> = Property(tracking: { [mutableTemperatureUnit] in
         mutableTemperatureUnit.value == .fahrenheit ? .fahrenheit : .celsius
     })
 
-    public private(set) lazy var unitSettings: any PropertyProtocol<UnitSettings> = Property(tracking: { [weak self] in
+    public private(set) lazy var unitSettings: Property<UnitSettings> = Property(tracking: { [weak self] in
         self?.currentSettings ?? .testSettings()
     })
 

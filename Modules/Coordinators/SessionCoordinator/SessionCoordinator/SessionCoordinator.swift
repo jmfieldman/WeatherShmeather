@@ -14,7 +14,7 @@ import UIKit
 public protocol SessionCoordinator: MainActorBuildable {
     /// True while a user's managers are installed. The `SceneDelegator`
     /// activates injections on each false-to-true edge.
-    var readyForInjectionActivation: any PropertyProtocol<Bool> { get }
+    var readyForInjectionActivation: Property<Bool> { get }
 }
 
 public struct SessionCoordinatorBuilder: Builder {

@@ -37,8 +37,8 @@ public final class UnitsScreenImpl: HostingScreen<UnitsScreenModel, UnitsView>, 
 public final class UnitsScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?
     public private(set) lazy var viewModel = UnitsViewModel(
-        settings: Property(mirroring: preferencesManager.unitSettings),
-        temperaturePreference: Property(mirroring: preferencesManager.temperatureUnit),
+        settings: preferencesManager.unitSettings,
+        temperaturePreference: preferencesManager.temperatureUnit,
         systemTemperatureUnit: .constant(RegionDefaults(measurementSystem: Locale.current.measurementSystem).temperature),
         changeTask: .weak(self) { `self`, change in
             self.apply(change)

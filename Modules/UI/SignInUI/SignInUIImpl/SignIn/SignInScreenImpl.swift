@@ -23,7 +23,7 @@ public final class SignInScreenModel: HostingScreenModel {
     public weak var viewController: UIViewController?
     public private(set) lazy var viewModel = SignInViewModel(
         text: Property(mirroring: text),
-        recentUsernames: Property(mirroring: sessionManager.recentUsernames),
+        recentUsernames: sessionManager.recentUsernames,
         submittableUsername: Property(tracking: { [text] in
             Username(text.value)
         }),

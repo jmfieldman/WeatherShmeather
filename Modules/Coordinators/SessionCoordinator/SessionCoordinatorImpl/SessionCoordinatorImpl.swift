@@ -28,7 +28,7 @@ public final class SessionCoordinatorImpl: SessionCoordinator {
     private weak var weatherExperience: UIViewController?
 
     private let mutableReadyForInjectionActivation = MutableProperty(false)
-    public private(set) lazy var readyForInjectionActivation: any PropertyProtocol<Bool> =
+    public private(set) lazy var readyForInjectionActivation =
         Property(mirroring: mutableReadyForInjectionActivation)
 
     public required init(builder: SessionCoordinatorBuilder) {
